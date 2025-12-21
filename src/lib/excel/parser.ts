@@ -66,8 +66,9 @@ export async function parseExcelFile(
   }
 
   // Convert to JSON
+  // Use raw: true to preserve Date objects and numbers from Excel
   const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-    raw: false,
+    raw: true,
     defval: null,
   });
 

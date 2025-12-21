@@ -154,8 +154,9 @@ async function parseExcelFile(
 
   // Convert to JSON with explicit range to get ALL rows
   // SheetJS sometimes misses rows with many empty cells, so we need to be explicit
+  // Use raw: true to preserve Date objects and original values
   const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-    raw: false,
+    raw: true,
     defval: null,
     blankrows: true, // Include rows that appear blank
   });

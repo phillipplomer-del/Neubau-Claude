@@ -5,6 +5,65 @@
 
 import type { Department } from '@/types/common';
 
+/**
+ * Parse date string from Excel (handles multiple formats)
+ * Supports: DD.MM.YYYY, MM/DD/YYYY, M/D/YYYY, and Date objects
+ */
+function parseExcelDate(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) {
+    // Filter out placeholder dates
+    if (value.getFullYear() === 1900 && value.getMonth() === 0 && value.getDate() === 1) {
+      return null;
+    }
+    return value;
+  }
+
+  const str = String(value).trim();
+  if (!str) return null;
+
+  let date: Date | null = null;
+
+  // Try DD.MM.YYYY format (German)
+  const germanMatch = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (germanMatch) {
+    const [, day, month, year] = germanMatch;
+    date = new Date(Number(year), Number(month) - 1, Number(day));
+  }
+
+  // Try MM/DD/YYYY or M/D/YYYY format (American)
+  const americanMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (americanMatch && !date) {
+    const [, first, second, yearStr] = americanMatch;
+
+    // Handle 2-digit or 4-digit year
+    let year = Number(yearStr);
+    if (year < 100) {
+      // Assume 20xx for years 00-99
+      year += 2000;
+    }
+
+    // Try as MM/DD/YYYY first
+    const month = Number(first);
+    const day = Number(second);
+
+    // Basic validation: month should be 1-12, day should be 1-31
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      date = new Date(year, month - 1, day);
+    }
+  }
+
+  // Validate the date
+  if (!date || isNaN(date.getTime())) return null;
+
+  // Filter out placeholder dates
+  if (date.getFullYear() === 1900 && date.getMonth() === 0 && date.getDate() === 1) {
+    return null; // "01.01.1900" is a placeholder
+  }
+
+  return date;
+}
+
 export interface ColumnMapping {
   excelColumn: string; // Name der Spalte im Excel
   internalField: string; // Name des Feldes in unserer App
@@ -27,30 +86,33 @@ export const DEFAULT_MAPPINGS: Record<Department, ColumnMapping[]> = {
   sales: [
     // Identifiers (mindestens eines sollte vorhanden sein)
     { excelColumn: 'ProductNumber', internalField: 'artikelnummer', required: false },
-    { excelColumn: 'PNR', internalField: 'projektnummer', required: false },
+    { excelColumn: 'PNR', internalField: 'projektnummer', required: false }, // Spalte C
 
     // Order info
     { excelColumn: 'OrderNumber', internalField: 'deliveryNumber', required: false },
-    { excelColumn: 'BookingDate', internalField: 'importedAt', required: false },
+    { excelColumn: 'BookingDate', internalField: 'importedAt', required: false, transform: parseExcelDate },
 
     // Customer
     { excelColumn: 'CustomerNumber', internalField: 'customerNumber', required: false },
     { excelColumn: 'Matchcode', internalField: 'customerName', required: false },
+    { excelColumn: 'Country', internalField: 'country', required: false },
 
     // Product
+    { excelColumn: 'ProductGroup', internalField: 'productGroup', required: false },
     { excelColumn: 'ProductName', internalField: 'productDescription', required: false },
 
     // Quantities & Delivery
     { excelColumn: 'Quantity', internalField: 'quantity', required: false },
     { excelColumn: 'QuantityRem1', internalField: 'quantityRemaining', required: true }, // Important for filtering!
     { excelColumn: 'Unit', internalField: 'unit', required: false },
-    { excelColumn: 'DeliveryDate', internalField: 'deliveryDate', required: false },
-    { excelColumn: 'Wunsch_Liefertermin', internalField: 'requestedDeliveryDate', required: false },
+    { excelColumn: 'DeliveryDate', internalField: 'deliveryDate', required: false, transform: parseExcelDate },
+    { excelColumn: 'Wunsch_Liefertermin', internalField: 'requestedDeliveryDate', required: false, transform: parseExcelDate },
+    { excelColumn: 'erster_Bestaetigter_Liefertermin', internalField: 'confirmedDeliveryDate', required: false, transform: parseExcelDate },
 
     // Financial
     { excelColumn: 'Turnover', internalField: 'totalPrice', required: false },
     { excelColumn: 'TurnoverRem1', internalField: 'remainingTurnover', required: false },
-    { excelColumn: 'offener Umsatz', internalField: 'openTurnover', required: false },
+    { excelColumn: 'offener Umsatz', internalField: 'openTurnover', required: false }, // Spalte AJ
 
     // Additional
     { excelColumn: 'Projekt_Verantwortlich', internalField: 'projectManager', required: false },
@@ -195,15 +257,27 @@ export function loadColumnMapping(department: Department): DepartmentColumnMappi
 
 /**
  * Get column mapping (from storage or default)
+ * Always applies transform functions from DEFAULT_MAPPINGS
  */
 export function getColumnMapping(department: Department): ColumnMapping[] {
   const stored = loadColumnMapping(department);
+  const defaultMappings = DEFAULT_MAPPINGS[department] ?? [];
 
   if (stored) {
-    return stored.mappings;
+    // Merge stored mappings with transform functions from defaults
+    return stored.mappings.map((mapping) => {
+      // Find matching default mapping to get transform function
+      const defaultMapping = defaultMappings.find(
+        (dm) => dm.internalField === mapping.internalField
+      );
+      return {
+        ...mapping,
+        transform: defaultMapping?.transform,
+      };
+    });
   }
 
-  return DEFAULT_MAPPINGS[department] ?? [];
+  return defaultMappings;
 }
 
 /**

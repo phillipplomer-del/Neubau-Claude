@@ -4,7 +4,7 @@
  */
 
 import { useMemo, useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { useSalesData } from '@/hooks/useSalesData';
 import { useSalesFilters } from '@/hooks/useSalesFilters';
 import { useCommentStatuses } from '@/hooks/useCommentStatuses';
@@ -13,6 +13,7 @@ import { calculateSalesKPIs } from '@/lib/sales/kpiCalculator';
 import { exportSalesToPDF } from '@/lib/sales/salesExport';
 import SalesFilterBar from './components/SalesFilterBar';
 import SalesTable from './components/SalesTable';
+import GroupedProjectsTable from './components/GroupedProjectsTable';
 import CommentModal from './components/CommentModal';
 import Button from '@/components/ui/Button';
 import type { SortingState } from '@tanstack/react-table';
@@ -21,6 +22,7 @@ import type { StatusFilter } from '@/hooks/useSalesFilters';
 
 export default function SalesDashboard() {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { data, loading, error } = useSalesData();
   const { statusMap } = useCommentStatuses();
   const { watchedProjects } = useWatchedProjects();
@@ -126,6 +128,31 @@ export default function SalesDashboard() {
     setIsModalOpen(true);
   };
 
+  // Get page title based on current filter/view
+  const getPageTitle = (): string => {
+    const statusParam = searchParams.get('status');
+
+    if (statusParam === 'watched') {
+      return 'Beobachtete';
+    }
+    if (statusParam === 'critical,at-risk') {
+      return 'Kritische';
+    }
+    if (statusParam === 'critical') {
+      return 'Kritische';
+    }
+    if (statusParam === 'at-risk') {
+      return 'Gefährdete';
+    }
+
+    // Default based on route
+    if (location.pathname === '/sales/deliveries') {
+      return 'Lieferungen';
+    }
+
+    return 'Offene Lieferungen';
+  };
+
   // PDF Export handler
   const handleExportPDF = async () => {
     const hasFilters =
@@ -156,7 +183,7 @@ export default function SalesDashboard() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Offene Lieferungen</h1>
+        <h1 className="text-xl font-bold text-gray-900">{getPageTitle()}</h1>
         {!loading && filteredData.length > 0 && (
           <Button onClick={handleExportPDF} variant="primary" size="sm">
             PDF Export
@@ -179,15 +206,25 @@ export default function SalesDashboard() {
         />
       )}
 
-      {/* Sales Table */}
+      {/* Sales Table - use grouped view for "Beobachtete" */}
       {!loading && filteredData.length > 0 && (
-        <SalesTable
-          data={filteredData}
-          sorting={sorting}
-          onSortingChange={setSorting}
-          onRowClick={handleRowClick}
-          statusMap={combinedStatusMap}
-        />
+        <>
+          {searchParams.get('status') === 'watched' ? (
+            <GroupedProjectsTable
+              data={filteredData}
+              onRowClick={handleRowClick}
+              statusMap={combinedStatusMap}
+            />
+          ) : (
+            <SalesTable
+              data={filteredData}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              onRowClick={handleRowClick}
+              statusMap={combinedStatusMap}
+            />
+          )}
+        </>
       )}
 
       {/* Comment Modal */}
