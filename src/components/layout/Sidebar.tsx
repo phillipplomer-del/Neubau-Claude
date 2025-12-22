@@ -8,6 +8,7 @@ import {
   GanttChart,
   TrendingUp,
   Folders,
+  GitCompare,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -52,6 +53,12 @@ const navigation: NavSection[] = [
       { label: 'Projekte', path: '/projects/list', icon: Folders },
     ],
   },
+  {
+    title: 'Datenabgleich',
+    items: [
+      { label: 'Vergleich', path: '/datacomparison', icon: GitCompare },
+    ],
+  },
 ];
 
 export default function Sidebar({ collapsed }: SidebarProps) {
@@ -68,7 +75,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
       return location.pathname === pathname && location.search === `?${query}`;
     }
     // For dashboard paths (exact section root), require exact match
-    if (path === '/sales' || path === '/sales/dashboard' || path === '/production' || path === '/projects/controlling') {
+    if (path === '/sales' || path === '/sales/dashboard' || path === '/production' || path === '/projects/controlling' || path === '/datacomparison') {
       return location.pathname === path && location.search === '';
     }
     // For other paths, use startsWith but ensure no query params

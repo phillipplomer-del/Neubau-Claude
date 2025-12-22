@@ -2,11 +2,13 @@ import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import { useUserContext } from '@/contexts/UserContext';
 import { clearStore } from '@/lib/db';
 import { STORE_NAMES } from '@/types/database';
 import { Package, Factory, FolderKanban, Upload, Trash2, Clock } from 'lucide-react';
 
 export default function Home() {
+  const { user } = useUserContext();
   const [clearing, setClearing] = useState(false);
   const [clearSuccess, setClearSuccess] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -62,7 +64,7 @@ export default function Home() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Willkommen bei Galadriel
+            Willkommen{user?.firstName ? `, ${user.firstName}` : ' bei Galadriel'}
           </h1>
           <p className="mt-1 text-muted-foreground">
             Ihr Business Intelligence Dashboard für Sales, Produktion und Projektmanagement
