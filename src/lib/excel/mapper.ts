@@ -197,7 +197,6 @@ export function mapRowData(
   department: Department
 ): Record<string, unknown> {
   const mapped: Record<string, unknown> = {
-    id: generateId(),
     department,
     importedAt: new Date(),
     sourceFile: '', // Will be set by importer
@@ -214,13 +213,61 @@ export function mapRowData(
     mapped[mapping.internalField] = value;
   }
 
+  // Generate stable ID based on mapped data
+  mapped.id = generateStableId(mapped, department);
+
   return mapped;
 }
 
 /**
- * Generate unique ID for entries
+ * Generate stable ID based on data fields
+ * Uses a combination of stable fields to create reproducible IDs
  */
-function generateId(): string {
+function generateStableId(data: Record<string, unknown>, department: Department): string {
+  let keyParts: string[] = [];
+
+  switch (department) {
+    case 'sales':
+      // Use OrderNumber + ProductNumber + Quantity for unique identification
+      keyParts = [
+        String(data.deliveryNumber || ''),
+        String(data.artikelnummer || ''),
+        String(data.projektnummer || ''),
+        String(data.quantity || ''),
+      ];
+      break;
+    case 'production':
+      // Use work order number + product number
+      keyParts = [
+        String(data.workOrderNumber || ''),
+        String(data.artikelnummer || ''),
+        String(data.operationNumber || ''),
+      ];
+      break;
+    case 'projectManagement':
+      // Use project number + article number
+      keyParts = [
+        String(data.projektnummer || ''),
+        String(data.artikelnummer || ''),
+      ];
+      break;
+  }
+
+  // Create a hash from the key parts
+  const keyString = keyParts.filter(p => p).join('-');
+
+  if (keyString) {
+    // Simple hash function for stable IDs
+    let hash = 0;
+    for (let i = 0; i < keyString.length; i++) {
+      const char = keyString.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return `${department}-${Math.abs(hash).toString(36)}`;
+  }
+
+  // Fallback to random ID if no key fields available
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 

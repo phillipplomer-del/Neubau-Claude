@@ -4,7 +4,8 @@ import Home from './pages/Home';
 import Import from './pages/Import';
 
 // Sales pages
-import SalesDashboard from './pages/sales/Dashboard';
+import SalesDeliveries from './pages/sales/Dashboard';
+import SalesDashboard from './pages/sales/SalesDashboard';
 import DeliveryList from './pages/sales/DeliveryList';
 import DeliveryDetails from './pages/sales/DeliveryDetails';
 
@@ -30,7 +31,8 @@ function App() {
 
           {/* Sales routes */}
           <Route path="sales">
-            <Route index element={<SalesDashboard />} />
+            <Route index element={<SalesDeliveries />} />
+            <Route path="dashboard" element={<SalesDashboard />} />
             <Route path="deliveries" element={<DeliveryList />} />
             <Route path="deliveries/:id" element={<DeliveryDetails />} />
           </Route>

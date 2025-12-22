@@ -50,35 +50,35 @@ export default function ControllingKPIs({ projects }: ControllingKPIsProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       {/* Total Umsatz */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <div className="text-sm text-gray-500 mb-1">Gesamt-Umsatz</div>
-        <div className="text-2xl font-bold text-blue-600">
+      <div className="rounded-lg border border-border bg-card p-3">
+        <div className="text-xs text-muted-foreground mb-0.5">Gesamt-Umsatz</div>
+        <div className="text-xl font-bold text-primary">
           {formatCurrency(kpis.totalUmsatz)}
         </div>
       </div>
 
       {/* Total Marge € */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <div className="text-sm text-gray-500 mb-1">Gesamt-Marge</div>
-        <div className="text-2xl font-bold text-green-600">
+      <div className="rounded-lg border border-border bg-card p-3">
+        <div className="text-xs text-muted-foreground mb-0.5">Gesamt-Marge</div>
+        <div className="text-xl font-bold text-green-600 dark:text-green-400">
           {formatCurrency(kpis.totalMarge)}
         </div>
       </div>
 
       {/* Marge % */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <div className="text-sm text-gray-500 mb-1">Marge %</div>
-        <div className="text-2xl font-bold text-purple-600">
+      <div className="rounded-lg border border-border bg-card p-3">
+        <div className="text-xs text-muted-foreground mb-0.5">Marge %</div>
+        <div className="text-xl font-bold text-primary/80">
           {(kpis.margeProzent * 100).toFixed(1)}%
         </div>
       </div>
 
       {/* Project Count */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <div className="text-sm text-gray-500 mb-1">Anzahl Projekte</div>
-        <div className="text-2xl font-bold text-gray-900">
+      <div className="rounded-lg border border-border bg-card p-3">
+        <div className="text-xs text-muted-foreground mb-0.5">Anzahl Projekte</div>
+        <div className="text-xl font-bold text-foreground">
           {kpis.projectCount}
         </div>
       </div>

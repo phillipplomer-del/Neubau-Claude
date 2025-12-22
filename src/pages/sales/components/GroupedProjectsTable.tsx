@@ -108,30 +108,30 @@ export default function GroupedProjectsTable({ data, onRowClick, statusMap }: Gr
   const getStatusColor = (status: CommentStatus): string => {
     switch (status) {
       case 'critical':
-        return 'bg-red-100';
+        return 'bg-red-100 dark:bg-red-900/30';
       case 'at-risk':
-        return 'bg-orange-100';
+        return 'bg-orange-100 dark:bg-orange-900/30';
       case 'watched':
-        return 'bg-purple-100';
+        return 'bg-purple-100 dark:bg-purple-900/30';
       default:
-        return 'bg-white';
+        return 'bg-card';
     }
   };
 
   const getRowClassName = (entry: SalesEntry): string => {
     const status = entry.id ? statusMap?.get(entry.id) : undefined;
-    const baseClasses = "border-b border-gray-100 hover:opacity-90 transition-colors cursor-pointer";
+    const baseClasses = "border-b border-border hover:opacity-90 transition-colors cursor-pointer";
 
     if (status === 'critical') {
-      return `${baseClasses} bg-red-100`;
+      return `${baseClasses} bg-red-100 dark:bg-red-900/30`;
     }
     if (status === 'at-risk') {
-      return `${baseClasses} bg-orange-100`;
+      return `${baseClasses} bg-orange-100 dark:bg-orange-900/30`;
     }
     if (status === 'watched') {
-      return `${baseClasses} bg-purple-100`;
+      return `${baseClasses} bg-purple-100 dark:bg-purple-900/30`;
     }
-    return `${baseClasses} hover:bg-primary-50`;
+    return `${baseClasses} hover:bg-accent`;
   };
 
   const formatDate = (date: Date | string | null | undefined): string => {
@@ -147,30 +147,30 @@ export default function GroupedProjectsTable({ data, onRowClick, statusMap }: Gr
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
       <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
         <table className="w-full border-collapse text-xs">
-          <thead className="sticky top-0 z-10 bg-gray-50">
-            <tr className="border-b border-gray-200">
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs w-8"></th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 90 }}>Best.Nr.</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 90 }}>PNR</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 85 }}>Buchung</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 75 }}>Kd.Nr.</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 130 }}>Kunde</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 50 }}>Land</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 85 }}>Prod.Gr.</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 90 }}>Art.Nr.</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 120 }}>Produktname</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 85 }}>Wunsch</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 85 }}>Best.</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 85 }}>Liefer.</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 50 }}>Einh.</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 70 }}>Menge</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 100 }}>Proj.Verantw.</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 90 }}>Bearb.</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 95 }}>Umsatz</th>
-              <th className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs" style={{ width: 85 }}>Verzug</th>
+          <thead className="sticky top-0 z-10 bg-muted">
+            <tr className="border-b border-border">
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs w-8"></th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 90 }}>Best.Nr.</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 90 }}>PNR</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 85 }}>Buchung</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 75 }}>Kd.Nr.</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 130 }}>Kunde</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 50 }}>Land</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 85 }}>Prod.Gr.</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 90 }}>Art.Nr.</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 120 }}>Produktname</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 85 }}>Wunsch</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 85 }}>Best.</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 85 }}>Liefer.</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 50 }}>Einh.</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 70 }}>Menge</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 100 }}>Proj.Verantw.</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 90 }}>Bearb.</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 95 }}>Umsatz</th>
+              <th className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs" style={{ width: 85 }}>Verzug</th>
             </tr>
           </thead>
           <tbody>
@@ -182,10 +182,10 @@ export default function GroupedProjectsTable({ data, onRowClick, statusMap }: Gr
                   {/* Project Header Row - Collapsed view shows summary */}
                   <tr
                     onClick={() => toggleProject(group.projektnummer)}
-                    className={`${getStatusColor(group.status)} border-b-2 border-gray-300 hover:opacity-90 cursor-pointer`}
+                    className={`${getStatusColor(group.status)} border-b-2 border-border hover:opacity-90 cursor-pointer`}
                   >
                     <td className="px-3 py-3 text-center">
-                      <span className="text-base font-bold">{isExpanded ? '▼' : '▶'}</span>
+                      <span className="text-base font-bold text-foreground">{isExpanded ? '▼' : '▶'}</span>
                     </td>
                     {/* Project info spanning full width */}
                     <td className="px-3 py-3" colSpan={18}>
@@ -193,20 +193,20 @@ export default function GroupedProjectsTable({ data, onRowClick, statusMap }: Gr
                         {/* Left: Project + Customer + Project Manager */}
                         <div className="flex items-center gap-6">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-sm font-semibold text-gray-900">
+                            <span className="text-sm font-semibold text-foreground">
                               Projekt {group.projektnummer}
                             </span>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-muted-foreground">
                               ({group.entries.length} Artikel)
                             </span>
                           </div>
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-muted-foreground">
                             {group.entries[0]?.customerName || '-'}
                           </div>
                           {group.projectManager && (
                             <div className="text-sm">
-                              <span className="text-gray-500">PL: </span>
-                              <span className="font-medium text-gray-700">{group.projectManager}</span>
+                              <span className="text-muted-foreground">PL: </span>
+                              <span className="font-medium text-foreground">{group.projectManager}</span>
                             </div>
                           )}
                         </div>
@@ -214,14 +214,14 @@ export default function GroupedProjectsTable({ data, onRowClick, statusMap }: Gr
                         {/* Right: Delivery + Turnover */}
                         <div className="flex items-center gap-8">
                           <div className="text-sm">
-                            <span className="text-gray-500">Früheste Lieferung: </span>
-                            <span className="font-medium text-gray-900">
+                            <span className="text-muted-foreground">Früheste Lieferung: </span>
+                            <span className="font-medium text-foreground">
                               {group.earliestDelivery ? formatDate(group.earliestDelivery) : '-'}
                             </span>
                           </div>
                           <div className="text-right">
-                            <div className="text-xs text-gray-500">Gesamt-Umsatz</div>
-                            <div className="font-mono text-green-700 font-semibold text-base">
+                            <div className="text-xs text-muted-foreground">Gesamt-Umsatz</div>
+                            <div className="font-mono text-green-700 dark:text-green-400 font-semibold text-base">
                               {formatCurrency(group.totalValue)}
                             </div>
                           </div>
@@ -238,42 +238,42 @@ export default function GroupedProjectsTable({ data, onRowClick, statusMap }: Gr
                       className={getRowClassName(entry)}
                     >
                       <td className="px-1.5 py-1.5"></td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{safeString(entry.deliveryNumber)}</td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{safeString(entry.projektnummer)}</td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{formatDate(entry.importedAt)}</td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{safeString(entry.customerNumber)}</td>
-                      <td className="px-1.5 py-1.5 text-gray-900">
+                      <td className="px-1.5 py-1.5 text-foreground">{safeString(entry.deliveryNumber)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">{safeString(entry.projektnummer)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">{formatDate(entry.importedAt)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">{safeString(entry.customerNumber)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">
                         <span className="block truncate" title={safeString(entry.customerName)}>
                           {safeString(entry.customerName)}
                         </span>
                       </td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{safeString(entry.country)}</td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{safeString(entry.productGroup)}</td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{safeString(entry.artikelnummer)}</td>
-                      <td className="px-1.5 py-1.5 text-gray-900">
+                      <td className="px-1.5 py-1.5 text-foreground">{safeString(entry.country)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">{safeString(entry.productGroup)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">{safeString(entry.artikelnummer)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">
                         <span className="block truncate" title={safeString(entry.productDescription)}>
                           {safeString(entry.productDescription)}
                         </span>
                       </td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{formatDate(entry.requestedDeliveryDate)}</td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{formatDate(entry.confirmedDeliveryDate)}</td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{formatDate(entry.deliveryDate)}</td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{safeString(entry.unit)}</td>
-                      <td className="px-1.5 py-1.5 text-gray-900">
+                      <td className="px-1.5 py-1.5 text-foreground">{formatDate(entry.requestedDeliveryDate)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">{formatDate(entry.confirmedDeliveryDate)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">{formatDate(entry.deliveryDate)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">{safeString(entry.unit)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">
                         {entry.quantity ? <span className="font-mono">{formatNumber(entry.quantity)}</span> : '-'}
                       </td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{safeString(entry.projectManager)}</td>
-                      <td className="px-1.5 py-1.5 text-gray-900">{safeString(entry.processor)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">{safeString(entry.projectManager)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">{safeString(entry.processor)}</td>
                       <td className="px-1.5 py-1.5">
                         {entry.openTurnover ? (
-                          <span className="font-mono text-green-700 text-xs">
+                          <span className="font-mono text-green-700 dark:text-green-400 text-xs">
                             {formatCurrency(entry.openTurnover)}
                           </span>
                         ) : '-'}
                       </td>
-                      <td className="px-1.5 py-1.5 text-gray-900">
+                      <td className="px-1.5 py-1.5 text-foreground">
                         {entry.delayDays && entry.delayDays > 0 ? (
-                          <span className="font-mono text-red-600">
+                          <span className="font-mono text-red-600 dark:text-red-400">
                             {entry.delayDays}
                           </span>
                         ) : '-'}

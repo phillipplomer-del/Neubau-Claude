@@ -6,11 +6,11 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 
 const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ className = '', variant = 'default', children, ...props }, ref) => {
-    const baseClasses = 'rounded-lg bg-white';
+    const baseClasses = 'rounded-lg bg-card text-card-foreground';
 
     const variantClasses = {
       default: 'shadow-md',
-      bordered: 'border border-gray-200',
+      bordered: 'border border-border',
     };
 
     const classes = `${baseClasses} ${variantClasses[variant]} ${className}`;
@@ -32,7 +32,7 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
     return (
       <div
         ref={ref}
-        className={`border-b border-gray-200 px-6 py-4 ${className}`}
+        className={`border-b border-border px-6 py-4 ${className}`}
         {...props}
       >
         {children}
@@ -50,7 +50,7 @@ export const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
     return (
       <h3
         ref={ref}
-        className={`text-lg font-semibold text-gray-900 ${className}`}
+        className={`text-lg font-semibold text-foreground ${className}`}
         {...props}
       >
         {children}

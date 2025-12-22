@@ -87,7 +87,7 @@ export default function ControllingView() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Lade Daten...</div>
+        <div className="text-muted-foreground">Lade Daten...</div>
       </div>
     );
   }
@@ -98,7 +98,7 @@ export default function ControllingView() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Controlling</h1>
+        <h1 className="text-xl font-bold text-foreground">Controlling</h1>
 
         <div className="flex items-center gap-3">
           {hasData && (
@@ -128,15 +128,15 @@ export default function ControllingView() {
 
       {/* Content when data is available */}
       {hasData ? (
-        <div ref={reportRef} className="space-y-6 bg-white">
+        <div ref={reportRef} className="space-y-4">
           {/* KPI Cards */}
           {projects.length > 0 && (
             <ControllingKPIs projects={projects} />
           )}
 
-          {/* Pie Charts - Projects by Manager and Category */}
-          {projects.length > 0 && (
-            <ProjectPieCharts projects={projects} />
+          {/* Time Series Chart - moved to top */}
+          {data.length > 0 && (
+            <ControllingChart data={data} years={years} />
           )}
 
           {/* Financial Bar Chart */}
@@ -144,13 +144,13 @@ export default function ControllingView() {
             <FinancialBarChart projects={projects} />
           )}
 
-          {/* Time Series Chart */}
-          {data.length > 0 && (
-            <ControllingChart data={data} years={years} />
+          {/* Pie Charts - Projects by Manager and Category - moved to bottom */}
+          {projects.length > 0 && (
+            <ProjectPieCharts projects={projects} />
           )}
 
           {/* Data Info */}
-          <div className="text-sm text-gray-500 text-center">
+          <div className="text-xs text-muted-foreground text-center">
             {projects.length > 0 && `${projects.length} Projekte`}
             {projects.length > 0 && data.length > 0 && ' • '}
             {data.length > 0 && `${data.length} Zeitreihen-Datenpunkte`}
@@ -158,15 +158,15 @@ export default function ControllingView() {
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-12 text-center">
+        <div className="rounded-lg border border-border bg-card p-12 text-center">
           <div className="text-4xl mb-4">📊</div>
-          <p className="text-lg font-medium text-gray-900">Keine Controlling-Daten vorhanden</p>
-          <p className="mt-2 text-gray-600">
+          <p className="text-lg font-medium text-foreground">Keine Controlling-Daten vorhanden</p>
+          <p className="mt-2 text-muted-foreground">
             Die Daten werden automatisch geladen, wenn Sie die Controlling.xlsx über die Import-Seite hochladen.
           </p>
           <Link
             to="/import"
-            className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
+            className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-600 transition-colors"
           >
             Zum Import
           </Link>

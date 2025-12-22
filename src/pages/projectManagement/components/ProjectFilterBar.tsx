@@ -58,7 +58,7 @@ export default function ProjectFilterBar({
     filters.statusFilter !== 'all';
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-3">
+    <div className="rounded-lg border border-border bg-card p-3">
       <div className="flex items-center gap-3 flex-wrap">
         {/* Quick Filter Buttons */}
         <div className="flex items-center gap-2">
@@ -85,7 +85,7 @@ export default function ProjectFilterBar({
           </Button>
         </div>
 
-        <div className="h-6 w-px bg-gray-300"></div>
+        <div className="h-6 w-px bg-border"></div>
 
         {/* Status Filter Buttons */}
         <div className="flex items-center gap-2">
@@ -129,7 +129,7 @@ export default function ProjectFilterBar({
           </Button>
         </div>
 
-        <div className="h-6 w-px bg-gray-300"></div>
+        <div className="h-6 w-px bg-border"></div>
 
         {/* Search Field */}
         <div className="flex-1 min-w-[250px]">
@@ -145,7 +145,7 @@ export default function ProjectFilterBar({
         {/* Year Filter */}
         <select
           id="year"
-          className="h-9 rounded-md border border-gray-300 px-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="h-9 rounded-md border border-input bg-background text-foreground px-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
           value={filters.year || ''}
           onChange={(e) => onYearChange(e.target.value || null)}
         >
@@ -160,7 +160,7 @@ export default function ProjectFilterBar({
         {/* Month Filter */}
         <select
           id="month"
-          className="h-9 rounded-md border border-gray-300 px-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          className="h-9 rounded-md border border-input bg-background text-foreground px-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring disabled:bg-muted disabled:cursor-not-allowed"
           value={filters.month || ''}
           onChange={(e) => onMonthChange(e.target.value || null)}
           disabled={filters.year === null}
@@ -176,7 +176,7 @@ export default function ProjectFilterBar({
         {/* Reset Button */}
         {hasActiveFilters && (
           <>
-            <div className="h-6 w-px bg-gray-300"></div>
+            <div className="h-6 w-px bg-border"></div>
             <Button variant="ghost" size="sm" onClick={onReset}>
               Zurücksetzen
             </Button>

@@ -20,13 +20,13 @@ interface FinancialBarChartProps {
   projects: ProjectEntry[];
 }
 
-// Colors for each bar
+// Purple gradient colors from design (darkest to lightest)
 const COLORS = {
-  umsatz: '#3b82f6',        // blue
-  vk: '#8b5cf6',            // purple
-  aktuell: '#22c55e',       // green
-  voraussichtlich: '#f97316', // orange
-  marge: '#14b8a6',         // teal
+  umsatz: 'hsl(238.73, 83.53%, 66.67%)',     // primary purple
+  vk: 'hsl(243.4, 75.36%, 58.63%)',          // chart-2
+  aktuell: 'hsl(244.52, 57.94%, 50.59%)',    // chart-3
+  voraussichtlich: 'hsl(243.65, 54.5%, 41.37%)', // chart-4
+  marge: 'hsl(242.17, 47.43%, 34.31%)',      // chart-5
 };
 
 /**
@@ -76,9 +76,9 @@ export default function FinancialBarChart({ projects }: FinancialBarChartProps) 
 
     const data = payload[0];
     return (
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
-        <p className="font-semibold text-gray-900">{data.payload.name}</p>
-        <p className="text-sm text-gray-600">{formatCurrency(data.value)}</p>
+      <div className="bg-card border border-border rounded-lg shadow-lg p-3">
+        <p className="font-semibold text-foreground">{data.payload.name}</p>
+        <p className="text-sm text-muted-foreground">{formatCurrency(data.value)}</p>
       </div>
     );
   };
@@ -88,25 +88,27 @@ export default function FinancialBarChart({ projects }: FinancialBarChartProps) 
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <h3 className="text-sm font-semibold text-gray-700 mb-4 text-center">
+    <div className="rounded-lg border border-border bg-card p-3">
+      <h3 className="text-sm font-semibold text-foreground mb-2 text-center">
         Finanzübersicht (Summe aller Projekte)
       </h3>
-      <div className="h-[300px]">
+      <div className="h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fontSize: 12 }}
-              tickLine={{ stroke: '#9ca3af' }}
+              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+              tickLine={false}
+              axisLine={{ stroke: 'hsl(var(--border))' }}
             />
             <YAxis
-              tick={{ fontSize: 11 }}
-              tickLine={{ stroke: '#9ca3af' }}
+              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              tickLine={false}
+              axisLine={false}
               tickFormatter={(value) => {
                 if (Math.abs(value) >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
                 if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(0)}k`;
@@ -127,16 +129,16 @@ export default function FinancialBarChart({ projects }: FinancialBarChartProps) 
       </div>
 
       {/* Summary below chart */}
-      <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-5 gap-2 text-center">
+      <div className="mt-2 pt-2 border-t border-border grid grid-cols-5 gap-2 text-center">
         {chartData.map((item) => (
           <div key={item.key}>
             <div
-              className="text-lg font-bold"
+              className="text-base font-bold"
               style={{ color: COLORS[item.key as keyof typeof COLORS] }}
             >
               {formatCurrency(item.value)}
             </div>
-            <div className="text-xs text-gray-500">{item.name}</div>
+            <div className="text-xs text-muted-foreground">{item.name}</div>
           </div>
         ))}
       </div>

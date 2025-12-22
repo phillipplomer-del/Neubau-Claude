@@ -24,14 +24,14 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantClasses = {
       primary:
-        'bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-600',
+        'bg-primary text-primary-foreground hover:bg-primary-600 focus-visible:ring-primary',
       secondary:
-        'bg-gray-200 text-gray-900 hover:bg-gray-300 focus-visible:ring-gray-500',
+        'bg-secondary text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-secondary',
       outline:
-        'border border-gray-300 bg-transparent hover:bg-gray-100 focus-visible:ring-gray-500',
-      ghost: 'hover:bg-gray-100 focus-visible:ring-gray-500',
+        'border border-border bg-transparent text-foreground hover:bg-accent focus-visible:ring-ring',
+      ghost: 'text-foreground hover:bg-accent focus-visible:ring-ring',
       danger:
-        'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600',
+        'bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive',
     };
 
     const sizeClasses = {

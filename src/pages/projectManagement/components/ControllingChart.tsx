@@ -1,17 +1,15 @@
 /**
  * Controlling Chart Component
  * Shows projects or turnover over time with year filter
+ * Modern design with purple gradient fills
  */
 
 import { useMemo, useState } from 'react';
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   AreaChart,
   Area,
@@ -25,26 +23,63 @@ interface ControllingChartProps {
 }
 
 type ViewMode = 'projects' | 'turnover';
+type TimeRange = 'last7' | 'last30' | 'last3months' | 'all';
+
+// Purple gradient colors from design
+const CATEGORY_COLORS = {
+  A: 'hsl(238.73, 83.53%, 66.67%)',  // primary purple
+  B: 'hsl(243.4, 75.36%, 58.63%)',   // chart-2
+  C: 'hsl(244.52, 57.94%, 50.59%)',  // chart-3
+};
+const PRIMARY_COLOR = 'hsl(238.73, 83.53%, 66.67%)';
 
 export default function ControllingChart({ data, years }: ControllingChartProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('projects');
   const [selectedYear, setSelectedYear] = useState<number | 'all'>('all');
+  const [timeRange, setTimeRange] = useState<TimeRange>('all');
 
-  // Filter data by year
+  // Filter data by year and time range
   const filteredData = useMemo(() => {
-    if (selectedYear === 'all') {
-      return data;
+    let filtered = data;
+
+    if (selectedYear !== 'all') {
+      filtered = filtered.filter(entry => entry.year === selectedYear);
     }
-    return data.filter(entry => entry.year === selectedYear);
-  }, [data, selectedYear]);
+
+    // Apply time range filter
+    if (timeRange !== 'all' && filtered.length > 0) {
+      const now = new Date();
+      switch (timeRange) {
+        case 'last7':
+          filtered = filtered.filter(entry => {
+            const diff = (now.getTime() - entry.date.getTime()) / (1000 * 60 * 60 * 24);
+            return diff <= 7;
+          });
+          break;
+        case 'last30':
+          filtered = filtered.filter(entry => {
+            const diff = (now.getTime() - entry.date.getTime()) / (1000 * 60 * 60 * 24);
+            return diff <= 30;
+          });
+          break;
+        case 'last3months':
+          filtered = filtered.filter(entry => {
+            const diff = (now.getTime() - entry.date.getTime()) / (1000 * 60 * 60 * 24);
+            return diff <= 90;
+          });
+          break;
+      }
+    }
+
+    return filtered;
+  }, [data, selectedYear, timeRange]);
 
   // Format data for chart
   const chartData = useMemo(() => {
     return filteredData.map(entry => ({
       date: entry.date.toLocaleDateString('de-DE', {
         day: '2-digit',
-        month: '2-digit',
-        year: selectedYear === 'all' ? '2-digit' : undefined,
+        month: 'short',
       }),
       fullDate: entry.date.toLocaleDateString('de-DE'),
       categoryA: entry.categoryA,
@@ -54,7 +89,7 @@ export default function ControllingChart({ data, years }: ControllingChartProps)
       turnover: entry.turnover,
       turnoverFormatted: formatCurrency(entry.turnover),
     }));
-  }, [filteredData, selectedYear]);
+  }, [filteredData]);
 
   // Format currency
   function formatCurrency(value: number): string {
@@ -67,43 +102,96 @@ export default function ControllingChart({ data, years }: ControllingChartProps)
     return `${value.toFixed(0)} €`;
   }
 
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string }>; label?: string }) => {
+  // Custom tooltip with modern styling
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string; dataKey: string }>; label?: string }) => {
     if (!active || !payload || payload.length === 0) return null;
 
-    const dataPoint = filteredData.find(d =>
-      d.date.toLocaleDateString('de-DE', {
-        day: '2-digit',
-        month: '2-digit',
-        year: selectedYear === 'all' ? '2-digit' : undefined,
-      }) === label
-    );
+    const dataPoint = chartData.find(d => d.date === label);
 
     return (
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
-        <p className="font-semibold text-gray-900 mb-2">{dataPoint?.date.toLocaleDateString('de-DE')}</p>
+      <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[150px]">
+        <p className="font-semibold text-foreground mb-2 text-sm">{dataPoint?.fullDate}</p>
         {viewMode === 'projects' ? (
-          <>
-            <p className="text-sm text-blue-600">Kat A: {dataPoint?.categoryA}</p>
-            <p className="text-sm text-green-600">Kat B: {dataPoint?.categoryB}</p>
-            <p className="text-sm text-orange-600">Kat C: {dataPoint?.categoryC}</p>
-            <p className="text-sm font-semibold text-gray-900 mt-1 pt-1 border-t">
-              Gesamt: {dataPoint?.totalProjects}
-            </p>
-          </>
+          <div className="space-y-1">
+            <div className="flex justify-between items-center gap-4">
+              <span className="text-xs" style={{ color: CATEGORY_COLORS.A }}>Kat A</span>
+              <span className="text-sm font-bold" style={{ color: CATEGORY_COLORS.A }}>{dataPoint?.categoryA}</span>
+            </div>
+            <div className="flex justify-between items-center gap-4">
+              <span className="text-xs" style={{ color: CATEGORY_COLORS.B }}>Kat B</span>
+              <span className="text-sm font-bold" style={{ color: CATEGORY_COLORS.B }}>{dataPoint?.categoryB}</span>
+            </div>
+            <div className="flex justify-between items-center gap-4">
+              <span className="text-xs" style={{ color: CATEGORY_COLORS.C }}>Kat C</span>
+              <span className="text-sm font-bold" style={{ color: CATEGORY_COLORS.C }}>{dataPoint?.categoryC}</span>
+            </div>
+            <div className="flex justify-between items-center gap-4 pt-1 border-t border-border">
+              <span className="text-xs text-muted-foreground">Gesamt</span>
+              <span className="text-sm font-bold text-foreground">{dataPoint?.total}</span>
+            </div>
+          </div>
         ) : (
-          <p className="text-sm font-semibold text-green-700">
-            {formatCurrency(dataPoint?.turnover || 0)}
-          </p>
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-muted-foreground">Umsatz</span>
+            <span className="text-sm font-bold text-primary">{dataPoint?.turnoverFormatted}</span>
+          </div>
         )}
       </div>
     );
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">
+            {viewMode === 'projects' ? 'Projektübersicht' : 'Umsatzentwicklung'}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {timeRange === 'last3months' ? 'Letzte 3 Monate' :
+             timeRange === 'last30' ? 'Letzte 30 Tage' :
+             timeRange === 'last7' ? 'Letzte 7 Tage' : 'Gesamter Zeitraum'}
+          </p>
+        </div>
+
+        {/* Time Range Filter - like in screenshot */}
+        <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+          <button
+            onClick={() => setTimeRange('last3months')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              timeRange === 'last3months'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            3 Monate
+          </button>
+          <button
+            onClick={() => setTimeRange('last30')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              timeRange === 'last30'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            30 Tage
+          </button>
+          <button
+            onClick={() => setTimeRange('all')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              timeRange === 'all'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Alle
+          </button>
+        </div>
+      </div>
+
       {/* Controls */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         {/* View Mode Toggle */}
         <div className="flex items-center gap-2">
           <Button
@@ -124,7 +212,7 @@ export default function ControllingChart({ data, years }: ControllingChartProps)
 
         {/* Year Filter */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Jahr:</span>
+          <span className="text-sm text-muted-foreground">Jahr:</span>
           <Button
             variant={selectedYear === 'all' ? 'primary' : 'outline'}
             size="sm"
@@ -146,154 +234,145 @@ export default function ControllingChart({ data, years }: ControllingChartProps)
       </div>
 
       {/* Chart */}
-      <div className="h-[400px]">
+      <div className="h-[260px]">
         {chartData.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-gray-500">
+          <div className="flex items-center justify-center h-full text-muted-foreground">
             Keine Daten verfügbar
           </div>
-        ) : viewMode === 'projects' ? (
+        ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorCatA" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={CATEGORY_COLORS.A} stopOpacity={0.6}/>
+                  <stop offset="95%" stopColor={CATEGORY_COLORS.A} stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="colorCatB" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={CATEGORY_COLORS.B} stopOpacity={0.6}/>
+                  <stop offset="95%" stopColor={CATEGORY_COLORS.B} stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="colorCatC" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={CATEGORY_COLORS.C} stopOpacity={0.6}/>
+                  <stop offset="95%" stopColor={CATEGORY_COLORS.C} stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="colorTurnover" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={PRIMARY_COLOR} stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor={PRIMARY_COLOR} stopOpacity={0.05}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="hsl(var(--border))"
+                vertical={false}
+              />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 11 }}
-                tickLine={{ stroke: '#9ca3af' }}
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                tickLine={false}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <YAxis
-                tick={{ fontSize: 11 }}
-                tickLine={{ stroke: '#9ca3af' }}
-                label={{
-                  value: 'Anzahl Projekte',
-                  angle: -90,
-                  position: 'insideLeft',
-                  style: { fontSize: 12, fill: '#6b7280' }
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => {
+                  if (viewMode === 'turnover') {
+                    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                    if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
+                  }
+                  return value;
                 }}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Area
-                type="monotone"
-                dataKey="categoryA"
-                name="Kategorie A"
-                stackId="1"
-                stroke="#3b82f6"
-                fill="#93c5fd"
-              />
-              <Area
-                type="monotone"
-                dataKey="categoryB"
-                name="Kategorie B"
-                stackId="1"
-                stroke="#22c55e"
-                fill="#86efac"
-              />
-              <Area
-                type="monotone"
-                dataKey="categoryC"
-                name="Kategorie C"
-                stackId="1"
-                stroke="#f97316"
-                fill="#fdba74"
-              />
+              {viewMode === 'projects' ? (
+                <>
+                  <Area
+                    type="monotone"
+                    dataKey="categoryA"
+                    name="Kategorie A"
+                    stackId="1"
+                    stroke={CATEGORY_COLORS.A}
+                    strokeWidth={2}
+                    fill="url(#colorCatA)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="categoryB"
+                    name="Kategorie B"
+                    stackId="1"
+                    stroke={CATEGORY_COLORS.B}
+                    strokeWidth={2}
+                    fill="url(#colorCatB)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="categoryC"
+                    name="Kategorie C"
+                    stackId="1"
+                    stroke={CATEGORY_COLORS.C}
+                    strokeWidth={2}
+                    fill="url(#colorCatC)"
+                  />
+                </>
+              ) : (
+                <Area
+                  type="monotone"
+                  dataKey="turnover"
+                  name="Umsatz"
+                  stroke={PRIMARY_COLOR}
+                  strokeWidth={2}
+                  fill="url(#colorTurnover)"
+                />
+              )}
             </AreaChart>
-          </ResponsiveContainer>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 11 }}
-                tickLine={{ stroke: '#9ca3af' }}
-              />
-              <YAxis
-                tick={{ fontSize: 11 }}
-                tickLine={{ stroke: '#9ca3af' }}
-                tickFormatter={(value) => {
-                  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
-                  if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
-                  return value;
-                }}
-                label={{
-                  value: 'Umsatz (€)',
-                  angle: -90,
-                  position: 'insideLeft',
-                  style: { fontSize: 12, fill: '#6b7280' }
-                }}
-              />
-              <Tooltip
-                formatter={(value: number) => [formatCurrency(value), 'Umsatz']}
-                labelFormatter={(label) => {
-                  const dataPoint = filteredData.find(d =>
-                    d.date.toLocaleDateString('de-DE', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: selectedYear === 'all' ? '2-digit' : undefined,
-                    }) === label
-                  );
-                  return dataPoint?.date.toLocaleDateString('de-DE') || label;
-                }}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="turnover"
-                name="Umsatz"
-                stroke="#16a34a"
-                strokeWidth={2}
-                dot={{ fill: '#16a34a', strokeWidth: 2, r: 3 }}
-                activeDot={{ r: 5, strokeWidth: 2 }}
-              />
-            </LineChart>
           </ResponsiveContainer>
         )}
       </div>
 
       {/* Summary Stats */}
-      <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-4 gap-4">
+      <div className="mt-3 pt-3 border-t border-border grid grid-cols-4 gap-4">
         {viewMode === 'projects' ? (
           <>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-xl font-bold text-primary">
                 {filteredData.length > 0 ? filteredData[filteredData.length - 1].categoryA : 0}
               </div>
-              <div className="text-xs text-gray-500">Aktuell Kat A</div>
+              <div className="text-xs text-muted-foreground">Kat A</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-xl font-bold text-primary/80">
                 {filteredData.length > 0 ? filteredData[filteredData.length - 1].categoryB : 0}
               </div>
-              <div className="text-xs text-gray-500">Aktuell Kat B</div>
+              <div className="text-xs text-muted-foreground">Kat B</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
+              <div className="text-xl font-bold text-primary/60">
                 {filteredData.length > 0 ? filteredData[filteredData.length - 1].categoryC : 0}
               </div>
-              <div className="text-xs text-gray-500">Aktuell Kat C</div>
+              <div className="text-xs text-muted-foreground">Kat C</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-xl font-bold text-foreground">
                 {filteredData.length > 0 ? filteredData[filteredData.length - 1].totalProjects : 0}
               </div>
-              <div className="text-xs text-gray-500">Gesamt Projekte</div>
+              <div className="text-xs text-muted-foreground">Gesamt</div>
             </div>
           </>
         ) : (
           <>
             <div className="text-center col-span-2">
-              <div className="text-2xl font-bold text-green-700">
+              <div className="text-xl font-bold text-primary">
                 {filteredData.length > 0 ? formatCurrency(filteredData[filteredData.length - 1].turnover) : '0 €'}
               </div>
-              <div className="text-xs text-gray-500">Aktueller Umsatz</div>
+              <div className="text-xs text-muted-foreground">Aktueller Umsatz</div>
             </div>
             <div className="text-center col-span-2">
-              <div className="text-2xl font-bold text-gray-600">
+              <div className="text-xl font-bold text-muted-foreground">
                 {filteredData.length > 0 ? formatCurrency(
                   Math.max(...filteredData.map(d => d.turnover))
                 ) : '0 €'}
               </div>
-              <div className="text-xs text-gray-500">Maximum im Zeitraum</div>
+              <div className="text-xs text-muted-foreground">Maximum</div>
             </div>
           </>
         )}

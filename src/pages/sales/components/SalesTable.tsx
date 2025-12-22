@@ -55,21 +55,21 @@ export default function SalesTable({ data, sorting, onSortingChange, onRowClick,
    * Get row background color based on comment status from Firebase
    */
   const getRowClassName = (entry: SalesEntry): string => {
-    const baseClasses = "border-b border-gray-100 hover:opacity-90 transition-colors cursor-pointer";
+    const baseClasses = "border-b border-border hover:opacity-90 transition-colors cursor-pointer";
 
     // Get status from Firebase statusMap
     const status = entry.id ? statusMap?.get(entry.id) : undefined;
 
     if (status === 'critical') {
-      return `${baseClasses} bg-red-100`;
+      return `${baseClasses} bg-red-100 dark:bg-red-900/30`;
     }
     if (status === 'at-risk') {
-      return `${baseClasses} bg-orange-100`;
+      return `${baseClasses} bg-orange-100 dark:bg-orange-900/30`;
     }
     if (status === 'watched') {
-      return `${baseClasses} bg-purple-100`;
+      return `${baseClasses} bg-purple-100 dark:bg-purple-900/30`;
     }
-    return `${baseClasses} hover:bg-primary-50`;
+    return `${baseClasses} hover:bg-accent`;
   };
 
   // Define columns based on sales_dashboard_spalten.md specification
@@ -207,7 +207,7 @@ export default function SalesTable({ data, sorting, onSortingChange, onRowClick,
           if (value === null || value === undefined) return '-';
           const num = typeof value === 'number' ? value : parseFloat(String(value));
           return (
-            <span className="font-mono text-green-700 text-xs">
+            <span className="font-mono text-green-700 dark:text-green-400 text-xs">
               {isNaN(num) ? '-' : formatCurrency(num)}
             </span>
           );
@@ -224,10 +224,10 @@ export default function SalesTable({ data, sorting, onSortingChange, onRowClick,
           const days = Number(value);
 
           if (isNaN(days)) return '-';
-          if (days === 0) return <span className="text-green-600 text-xs">OK</span>;
+          if (days === 0) return <span className="text-green-600 dark:text-green-400 text-xs">OK</span>;
           if (days > 0) {
             return (
-              <span className="rounded bg-red-100 px-1 py-0.5 text-xs font-medium text-red-700">
+              <span className="rounded bg-red-100 dark:bg-red-900/50 px-1 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
                 +{days}
               </span>
             );
@@ -275,20 +275,20 @@ export default function SalesTable({ data, sorting, onSortingChange, onRowClick,
 
   return (
     <>
-      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div
           ref={parentRef as React.RefObject<HTMLDivElement>}
           className="h-[calc(100vh-220px)] overflow-auto"
           style={{ contain: 'strict' }}
         >
           <table className="w-full border-collapse text-xs">
-            <thead className="sticky top-0 z-10 bg-gray-50">
+            <thead className="sticky top-0 z-10 bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-gray-200">
+              <tr key={headerGroup.id} className="border-b border-border">
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-1.5 py-1.5 text-left font-semibold text-gray-700 text-xs"
+                    className="px-1.5 py-1.5 text-left font-semibold text-muted-foreground text-xs"
                     style={{ width: header.column.columnDef.size }}
                   >
                     {header.isPlaceholder ? null : (
@@ -358,7 +358,7 @@ export default function SalesTable({ data, sorting, onSortingChange, onRowClick,
                   style={{ height: `${virtualRow.size}px` }}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-1.5 py-1.5 text-gray-900">
+                    <td key={cell.id} className="px-1.5 py-1.5 text-foreground">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}

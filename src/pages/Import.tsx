@@ -83,8 +83,8 @@ export default function Import() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Excel Import</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-3xl font-bold text-foreground">Excel Import</h1>
+        <p className="mt-2 text-muted-foreground">
           Laden Sie Excel-Dateien von Sales, Produktion und Projektmanagement hoch
         </p>
       </div>
@@ -123,10 +123,10 @@ export default function Import() {
               <div className="space-y-4">
                 {/* Current File Info */}
                 {filesToImport[currentFileIndex] && (
-                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <span>📄</span>
-                    <span className="font-medium">{filesToImport[currentFileIndex].file.name}</span>
-                    <span className="text-gray-400">•</span>
+                    <span className="font-medium text-foreground">{filesToImport[currentFileIndex].file.name}</span>
+                    <span className="text-muted-foreground">•</span>
                     <span>
                       {((filesToImport[currentFileIndex].file.size ?? 0) / 1024 / 1024).toFixed(2)} MB
                     </span>
@@ -176,15 +176,15 @@ export default function Import() {
                 {(allResults.length > 0 ? allResults : result ? [result] : []).map((res, index) => (
                   <div
                     key={index}
-                    className="rounded-lg border border-gray-200 bg-gray-50 p-4"
+                    className="rounded-lg border border-border bg-muted p-4"
                   >
                     <div className="space-y-4">
                       {/* File Info */}
                       <div className="flex items-center gap-3 text-sm">
                         <span className="text-2xl">✅</span>
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900">{res.fileName}</p>
-                          <p className="text-gray-600">
+                          <p className="font-medium text-foreground">{res.fileName}</p>
+                          <p className="text-muted-foreground">
                             {res.department === 'sales'
                               ? 'Sales (Offene Lieferungen)'
                               : res.department === 'production'
@@ -200,22 +200,22 @@ export default function Import() {
                       {/* Stats */}
                       <div className="grid grid-cols-3 gap-4">
                         <div className="text-center">
-                          <div className="text-xl font-bold text-primary-600">
+                          <div className="text-xl font-bold text-primary">
                             {res.rowsImported.toLocaleString('de-DE')}
                           </div>
-                          <div className="text-xs text-gray-600">Zeilen</div>
+                          <div className="text-xs text-muted-foreground">Zeilen</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-xl font-bold text-green-600">
+                          <div className="text-xl font-bold text-green-600 dark:text-green-400">
                             {res.validation.rowsValid.toLocaleString('de-DE')}
                           </div>
-                          <div className="text-xs text-gray-600">Gültig</div>
+                          <div className="text-xs text-muted-foreground">Gültig</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-xl font-bold text-gray-600">
+                          <div className="text-xl font-bold text-muted-foreground">
                             {(res.duration / 1000).toFixed(1)}s
                           </div>
-                          <div className="text-xs text-gray-600">Dauer</div>
+                          <div className="text-xs text-muted-foreground">Dauer</div>
                         </div>
                       </div>
                     </div>
@@ -224,27 +224,27 @@ export default function Import() {
 
                 {/* Total Stats */}
                 {allResults.length > 1 && (
-                  <div className="rounded-lg bg-primary-50 border border-primary-200 p-4">
+                  <div className="rounded-lg bg-secondary border border-border p-4">
                     <div className="grid grid-cols-3 gap-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-primary-600">
+                        <div className="text-2xl font-bold text-secondary-foreground">
                           {allResults
                             .reduce((sum, r) => sum + r.rowsImported, 0)
                             .toLocaleString('de-DE')}
                         </div>
-                        <div className="text-sm text-gray-600">Gesamt Zeilen</div>
+                        <div className="text-sm text-muted-foreground">Gesamt Zeilen</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-primary-600">
+                        <div className="text-2xl font-bold text-secondary-foreground">
                           {allResults.length}
                         </div>
-                        <div className="text-sm text-gray-600">Dateien</div>
+                        <div className="text-sm text-muted-foreground">Dateien</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-primary-600">
+                        <div className="text-2xl font-bold text-secondary-foreground">
                           {(allResults.reduce((sum, r) => sum + r.duration, 0) / 1000).toFixed(1)}s
                         </div>
-                        <div className="text-sm text-gray-600">Gesamt Dauer</div>
+                        <div className="text-sm text-muted-foreground">Gesamt Dauer</div>
                       </div>
                     </div>
                   </div>
@@ -260,7 +260,7 @@ export default function Import() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Die Daten wurden erfolgreich importiert. Sie können jetzt:
                 </p>
                 <div className="flex flex-wrap gap-3">
@@ -290,7 +290,7 @@ export default function Import() {
             <CardTitle>ℹ️ Hinweise zum Import</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-sm text-gray-600">
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
                 <span className="flex-shrink-0">•</span>
                 <span>

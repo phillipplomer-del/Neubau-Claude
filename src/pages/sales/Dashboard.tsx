@@ -24,24 +24,30 @@ export default function SalesDashboard() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const { data, loading, error } = useSalesData();
-  const { statusMap } = useCommentStatuses();
+  const { getStatusForEntry, projektnummerStatusMap } = useCommentStatuses();
   const { watchedProjects } = useWatchedProjects();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [selectedEntry, setSelectedEntry] = useState<SalesEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Combine comment status and watched project status
+  // Now uses getStatusForEntry which falls back to projektnummer lookup
   const combinedStatusMap = useMemo(() => {
     const combined = new Map<string, CommentStatus>();
 
-    // First, add all comment statuses
-    statusMap.forEach((status, entryId) => {
-      combined.set(entryId, status);
-    });
-
-    // Then, override with 'watched' for all entries with watched projektnummer
+    // For each entry, lookup status using the new combined function
     data.forEach((entry) => {
-      if (entry.id && entry.projektnummer && watchedProjects.has(entry.projektnummer)) {
+      if (!entry.id) return;
+
+      // Get status from Firebase (tries entryId first, then projektnummer)
+      const firebaseStatus = getStatusForEntry(entry.id, entry.projektnummer);
+
+      if (firebaseStatus && firebaseStatus !== 'none') {
+        combined.set(entry.id, firebaseStatus);
+      }
+
+      // Check if project is watched
+      if (entry.projektnummer && watchedProjects.has(entry.projektnummer)) {
         // Only set to 'watched' if not already critical or at-risk
         const currentStatus = combined.get(entry.id);
         if (!currentStatus || currentStatus === 'none') {
@@ -51,7 +57,7 @@ export default function SalesDashboard() {
     });
 
     return combined;
-  }, [statusMap, watchedProjects, data]);
+  }, [getStatusForEntry, projektnummerStatusMap, watchedProjects, data]);
 
   // Apply filters (but NOT status filters from useSalesFilters)
   const {
@@ -183,7 +189,7 @@ export default function SalesDashboard() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">{getPageTitle()}</h1>
+        <h1 className="text-xl font-bold text-foreground">{getPageTitle()}</h1>
         {!loading && filteredData.length > 0 && (
           <Button onClick={handleExportPDF} variant="primary" size="sm">
             PDF Export
@@ -241,9 +247,9 @@ export default function SalesDashboard() {
 
       {/* No results after filtering */}
       {!loading && data.length > 0 && filteredData.length === 0 && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-12 text-center">
-          <p className="text-lg font-medium text-gray-900">Keine Ergebnisse</p>
-          <p className="mt-2 text-gray-600">
+        <div className="rounded-lg border border-border bg-muted p-12 text-center">
+          <p className="text-lg font-medium text-foreground">Keine Ergebnisse</p>
+          <p className="mt-2 text-muted-foreground">
             Keine Einträge entsprechen den aktuellen Filterkriterien.
           </p>
         </div>
@@ -251,9 +257,9 @@ export default function SalesDashboard() {
 
       {/* Empty State */}
       {!loading && data.length === 0 && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-12 text-center">
-          <p className="text-lg font-medium text-gray-900">Keine Daten vorhanden</p>
-          <p className="mt-2 text-gray-600">
+        <div className="rounded-lg border border-border bg-muted p-12 text-center">
+          <p className="text-lg font-medium text-foreground">Keine Daten vorhanden</p>
+          <p className="mt-2 text-muted-foreground">
             Bitte importieren Sie zuerst eine Excel-Datei über die Import-Seite.
           </p>
         </div>
