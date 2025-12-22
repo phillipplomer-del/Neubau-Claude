@@ -1,7 +1,36 @@
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import { clearStore } from '@/lib/db';
+import { STORE_NAMES } from '@/types/database';
 
 export default function Home() {
+  const [clearing, setClearing] = useState(false);
+  const [clearSuccess, setClearSuccess] = useState(false);
+
+  const handleClearData = useCallback(async () => {
+    if (!window.confirm('Möchten Sie alle importierten Daten löschen?\n\nKommentare und Markierungen bleiben erhalten.')) {
+      return;
+    }
+
+    setClearing(true);
+    setClearSuccess(false);
+
+    try {
+      // Nur Sales-Daten löschen (Kommentare sind in Firebase und bleiben erhalten)
+      await clearStore(STORE_NAMES.SALES);
+      setClearSuccess(true);
+
+      // Nach 3 Sekunden Erfolgsmeldung ausblenden
+      setTimeout(() => setClearSuccess(false), 3000);
+    } catch (error) {
+      console.error('Fehler beim Löschen:', error);
+      alert('Fehler beim Löschen der Daten');
+    } finally {
+      setClearing(false);
+    }
+  }, []);
   return (
     <div className="space-y-6">
       <div>
@@ -89,6 +118,33 @@ export default function Home() {
             <span>📤</span>
             <span>Zum Import</span>
           </Link>
+        </CardContent>
+      </Card>
+
+      {/* Data Management Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Daten verwalten</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4 text-gray-600">
+            Importierte Daten zurücksetzen, um neue Daten hochzuladen. Kommentare und Markierungen bleiben erhalten.
+          </p>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleClearData}
+              disabled={clearing}
+            >
+              {clearing ? 'Lösche...' : 'Importierte Daten löschen'}
+            </Button>
+            {clearSuccess && (
+              <span className="text-sm text-green-600 font-medium">
+                Daten erfolgreich gelöscht
+              </span>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

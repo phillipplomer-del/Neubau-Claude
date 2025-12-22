@@ -19,6 +19,7 @@ import {
 import { salesRepository } from '@/lib/db/repositories/salesRepository';
 import { productionRepository } from '@/lib/db/repositories/productionRepository';
 import { projectRepository } from '@/lib/db/repositories/projectRepository';
+import { parseAndStoreTimeSeries } from '@/lib/controlling/timeseriesParser';
 import type { SalesEntry } from '@/types/sales';
 import type { ProductionEntry } from '@/types/production';
 import type { ProjectManagementEntry } from '@/types/projectManagement';
@@ -181,6 +182,14 @@ export function useExcelImport(): UseExcelImportReturn {
           await productionRepository.clear();
         } else if (department === 'projectManagement') {
           await projectRepository.clear();
+
+          // Also parse and store time series data from Tabelle2
+          try {
+            const timeseriesCount = await parseAndStoreTimeSeries(file);
+            console.log('[Hook] Time series entries stored:', timeseriesCount);
+          } catch (err) {
+            console.warn('[Hook] Could not parse time series data:', err);
+          }
         }
 
         // Store data in batches for better performance

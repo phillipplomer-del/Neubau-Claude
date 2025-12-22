@@ -20,6 +20,7 @@ interface ProjectGroup {
   totalValue: number;
   earliestDelivery: Date | null;
   status: CommentStatus;
+  projectManager: string | null;
 }
 
 export default function GroupedProjectsTable({ data, onRowClick, statusMap }: GroupedProjectsTableProps) {
@@ -39,6 +40,7 @@ export default function GroupedProjectsTable({ data, onRowClick, statusMap }: Gr
           totalValue: 0,
           earliestDelivery: null,
           status: 'none',
+          projectManager: null,
         });
       }
 
@@ -59,6 +61,11 @@ export default function GroupedProjectsTable({ data, onRowClick, statusMap }: Gr
         if (!group.earliestDelivery || deliveryDate < group.earliestDelivery) {
           group.earliestDelivery = deliveryDate;
         }
+      }
+
+      // Get project manager from first entry that has one
+      if (!group.projectManager && entry.projectManager) {
+        group.projectManager = entry.projectManager;
       }
 
       // Get highest priority status from statusMap
@@ -183,7 +190,7 @@ export default function GroupedProjectsTable({ data, onRowClick, statusMap }: Gr
                     {/* Project info spanning full width */}
                     <td className="px-3 py-3" colSpan={18}>
                       <div className="flex items-center justify-between">
-                        {/* Left: Project + Customer */}
+                        {/* Left: Project + Customer + Project Manager */}
                         <div className="flex items-center gap-6">
                           <div className="flex items-baseline gap-2">
                             <span className="text-sm font-semibold text-gray-900">
@@ -196,6 +203,12 @@ export default function GroupedProjectsTable({ data, onRowClick, statusMap }: Gr
                           <div className="text-sm text-gray-600">
                             {group.entries[0]?.customerName || '-'}
                           </div>
+                          {group.projectManager && (
+                            <div className="text-sm">
+                              <span className="text-gray-500">PL: </span>
+                              <span className="font-medium text-gray-700">{group.projectManager}</span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Right: Delivery + Turnover */}
