@@ -97,13 +97,14 @@ export class BaseRepository<T extends StoreName> {
 
   /**
    * Add multiple items in a single transaction
+   * Uses put() to handle duplicate keys gracefully (upsert behavior)
    */
   async addMany(items: StoreDataType<T>[]): Promise<void> {
     const db = await getDatabase();
     const tx = db.transaction(this.storeName, 'readwrite');
     const store = tx.objectStore(this.storeName);
 
-    await Promise.all(items.map((item) => store.add(item as never)));
+    await Promise.all(items.map((item) => store.put(item as never)));
     await tx.done;
   }
 

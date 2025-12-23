@@ -22,8 +22,11 @@ export interface SalesEntry extends BaseEntry {
   comments?: SalesComment[];
   commentStatus?: CommentStatus;
 
-  // Delivery information
+  // Order information
   deliveryNumber?: string;
+  bookingDate?: Date;  // Buchungsdatum (Auftragseingang)
+
+  // Delivery information
   deliveryDate?: Date;
   requestedDeliveryDate?: Date;
   confirmedDeliveryDate?: Date;

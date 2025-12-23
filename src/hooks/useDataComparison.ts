@@ -1,6 +1,6 @@
 /**
  * Data Comparison Hook
- * Compares data across Sales, Production, and Project Management
+ * Compares Projektnummern across Sales, Production, and Controlling (Project Management)
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -14,54 +14,57 @@ import type { ProjectManagementEntry } from '@/types/projectManagement';
 export interface DataCounts {
   sales: number;
   production: number;
-  projectManagement: number;
+  controlling: number;
+  // Unique Projektnummern pro Bereich
+  uniquePnrSales: number;
+  uniquePnrProduction: number;
+  uniquePnrControlling: number;
 }
 
-export interface ProjektnummerComparison {
+export interface MatchResult {
   projektnummer: string;
-  inSales: boolean;
-  inProduction: boolean;
-  inProjectManagement: boolean;
   salesCount: number;
   productionCount: number;
-  projectCount: number;
+  controllingCount: number;
 }
 
-export interface ArtikelnummerComparison {
-  artikelnummer: string;
-  inSales: boolean;
-  inProduction: boolean;
-  salesCount: number;
-  productionCount: number;
-}
-
-export interface ComparisonSummary {
-  projektnummern: {
-    total: number;
-    inAllThree: number;
-    inSalesAndProduction: number;
-    inSalesAndProject: number;
-    inProductionAndProject: number;
-    onlyInSales: number;
-    onlyInProduction: number;
-    onlyInProject: number;
-  };
-  artikelnummern: {
-    total: number;
-    inBoth: number;
-    onlyInSales: number;
-    onlyInProduction: number;
-  };
+export interface ComparisonMatches {
+  // Matches in allen drei Bereichen
+  allThree: MatchResult[];
+  // Matches Sales + Produktion (inkl. die auch in Controlling sind)
+  salesProduction: MatchResult[];
+  // Matches Sales + Controlling (inkl. die auch in Produktion sind)
+  salesControlling: MatchResult[];
+  // Matches Produktion + Controlling (inkl. die auch in Sales sind)
+  productionControlling: MatchResult[];
+  // In Sales aber NICHT in Controlling
+  salesNotInControlling: MatchResult[];
 }
 
 export interface UseDataComparisonReturn {
   loading: boolean;
   error: string | null;
   counts: DataCounts;
-  summary: ComparisonSummary;
-  projektnummernList: ProjektnummerComparison[];
-  artikelnummernList: ArtikelnummerComparison[];
+  matches: ComparisonMatches;
   refresh: () => Promise<void>;
+}
+
+/**
+ * Check if a projektnummer is valid (not empty or placeholder)
+ */
+function isValidProjektnummer(pnr: string | undefined | null): pnr is string {
+  if (!pnr) return false;
+  const trimmed = String(pnr).trim();
+  if (!trimmed) return false;
+
+  // Filter common placeholder values
+  const invalidValues = ['0', '-', 'n/a', 'na', 'none', 'null', 'undefined', ''];
+  if (invalidValues.includes(trimmed.toLowerCase())) return false;
+
+  // Filter very short values
+  if (trimmed.length < 2) return false;
+
+  return true;
 }
 
 export function useDataComparison(): UseDataComparisonReturn {
@@ -69,14 +72,14 @@ export function useDataComparison(): UseDataComparisonReturn {
   const [error, setError] = useState<string | null>(null);
   const [salesData, setSalesData] = useState<SalesEntry[]>([]);
   const [productionData, setProductionData] = useState<ProductionEntry[]>([]);
-  const [projectData, setProjectData] = useState<ProjectManagementEntry[]>([]);
+  const [controllingData, setControllingData] = useState<ProjectManagementEntry[]>([]);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const [sales, production, projects] = await Promise.all([
+      const [sales, production, controlling] = await Promise.all([
         salesRepository.getAll(),
         productionRepository.getAll(),
         projectRepository.getAll(),
@@ -84,7 +87,7 @@ export function useDataComparison(): UseDataComparisonReturn {
 
       setSalesData(sales as SalesEntry[]);
       setProductionData(production as ProductionEntry[]);
-      setProjectData(projects as ProjectManagementEntry[]);
+      setControllingData(controlling as ProjectManagementEntry[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Laden der Daten');
     } finally {
@@ -96,174 +99,116 @@ export function useDataComparison(): UseDataComparisonReturn {
     fetchData();
   }, [fetchData]);
 
+  // Build comparison matches (INKLUSIV - nicht exklusiv!)
+  // Moved up so we can use the maps for counts
+  const { matches, uniqueCounts } = useMemo(() => {
+    // Collect unique projektnummern from each source with counts
+    const salesPnr = new Map<string, number>();
+    const productionPnr = new Map<string, number>();
+    const controllingPnr = new Map<string, number>();
+
+    salesData.forEach((entry) => {
+      if (!isValidProjektnummer(entry.projektnummer)) return;
+      salesPnr.set(entry.projektnummer, (salesPnr.get(entry.projektnummer) || 0) + 1);
+    });
+
+    productionData.forEach((entry) => {
+      if (!isValidProjektnummer(entry.projektnummer)) return;
+      productionPnr.set(entry.projektnummer, (productionPnr.get(entry.projektnummer) || 0) + 1);
+    });
+
+    controllingData.forEach((entry) => {
+      if (!isValidProjektnummer(entry.projektnummer)) return;
+      controllingPnr.set(entry.projektnummer, (controllingPnr.get(entry.projektnummer) || 0) + 1);
+    });
+
+    // Find matches - INKLUSIV (alle die in beiden/allen sind, unabhängig vom dritten)
+    const allThree: MatchResult[] = [];
+    const salesProduction: MatchResult[] = [];
+    const salesControlling: MatchResult[] = [];
+    const productionControlling: MatchResult[] = [];
+    const salesNotInControlling: MatchResult[] = [];
+
+    // Alle unique Projektnummern sammeln
+    const allPnr = new Set<string>([
+      ...salesPnr.keys(),
+      ...productionPnr.keys(),
+      ...controllingPnr.keys(),
+    ]);
+
+    allPnr.forEach((pnr) => {
+      const inSales = salesPnr.has(pnr);
+      const inProduction = productionPnr.has(pnr);
+      const inControlling = controllingPnr.has(pnr);
+
+      const result: MatchResult = {
+        projektnummer: pnr,
+        salesCount: salesPnr.get(pnr) || 0,
+        productionCount: productionPnr.get(pnr) || 0,
+        controllingCount: controllingPnr.get(pnr) || 0,
+      };
+
+      // In allen drei
+      if (inSales && inProduction && inControlling) {
+        allThree.push(result);
+      }
+
+      // Sales + Produktion (inkl. die auch in Controlling sind)
+      if (inSales && inProduction) {
+        salesProduction.push(result);
+      }
+
+      // Sales + Controlling (inkl. die auch in Produktion sind)
+      if (inSales && inControlling) {
+        salesControlling.push(result);
+      }
+
+      // Produktion + Controlling (inkl. die auch in Sales sind)
+      if (inProduction && inControlling) {
+        productionControlling.push(result);
+      }
+
+      // In Sales aber NICHT in Controlling
+      if (inSales && !inControlling) {
+        salesNotInControlling.push(result);
+      }
+    });
+
+    // Sort all arrays
+    const sortByPnr = (a: MatchResult, b: MatchResult) =>
+      a.projektnummer.localeCompare(b.projektnummer);
+
+    return {
+      matches: {
+        allThree: allThree.sort(sortByPnr),
+        salesProduction: salesProduction.sort(sortByPnr),
+        salesControlling: salesControlling.sort(sortByPnr),
+        productionControlling: productionControlling.sort(sortByPnr),
+        salesNotInControlling: salesNotInControlling.sort(sortByPnr),
+      },
+      uniqueCounts: {
+        sales: salesPnr.size,
+        production: productionPnr.size,
+        controlling: controllingPnr.size,
+      },
+    };
+  }, [salesData, productionData, controllingData]);
+
   // Count entries per department
   const counts: DataCounts = useMemo(() => ({
     sales: salesData.length,
     production: productionData.length,
-    projectManagement: projectData.length,
-  }), [salesData, productionData, projectData]);
-
-  // Build Projektnummer comparison
-  const projektnummernList: ProjektnummerComparison[] = useMemo(() => {
-    const pnrMap = new Map<string, ProjektnummerComparison>();
-
-    // Add sales projektnummern
-    salesData.forEach((entry) => {
-      if (!entry.projektnummer) return;
-      const existing = pnrMap.get(entry.projektnummer);
-      if (existing) {
-        existing.salesCount++;
-      } else {
-        pnrMap.set(entry.projektnummer, {
-          projektnummer: entry.projektnummer,
-          inSales: true,
-          inProduction: false,
-          inProjectManagement: false,
-          salesCount: 1,
-          productionCount: 0,
-          projectCount: 0,
-        });
-      }
-    });
-
-    // Add production projektnummern
-    productionData.forEach((entry) => {
-      if (!entry.projektnummer) return;
-      const existing = pnrMap.get(entry.projektnummer);
-      if (existing) {
-        existing.inProduction = true;
-        existing.productionCount++;
-      } else {
-        pnrMap.set(entry.projektnummer, {
-          projektnummer: entry.projektnummer,
-          inSales: false,
-          inProduction: true,
-          inProjectManagement: false,
-          salesCount: 0,
-          productionCount: 1,
-          projectCount: 0,
-        });
-      }
-    });
-
-    // Add project projektnummern
-    projectData.forEach((entry) => {
-      if (!entry.projektnummer) return;
-      const existing = pnrMap.get(entry.projektnummer);
-      if (existing) {
-        existing.inProjectManagement = true;
-        existing.projectCount++;
-      } else {
-        pnrMap.set(entry.projektnummer, {
-          projektnummer: entry.projektnummer,
-          inSales: false,
-          inProduction: false,
-          inProjectManagement: true,
-          salesCount: 0,
-          productionCount: 0,
-          projectCount: 1,
-        });
-      }
-    });
-
-    return Array.from(pnrMap.values()).sort((a, b) =>
-      a.projektnummer.localeCompare(b.projektnummer)
-    );
-  }, [salesData, productionData, projectData]);
-
-  // Build Artikelnummer comparison (Sales vs Production only)
-  const artikelnummernList: ArtikelnummerComparison[] = useMemo(() => {
-    const artMap = new Map<string, ArtikelnummerComparison>();
-
-    // Add sales artikelnummern
-    salesData.forEach((entry) => {
-      if (!entry.artikelnummer) return;
-      const existing = artMap.get(entry.artikelnummer);
-      if (existing) {
-        existing.salesCount++;
-      } else {
-        artMap.set(entry.artikelnummer, {
-          artikelnummer: entry.artikelnummer,
-          inSales: true,
-          inProduction: false,
-          salesCount: 1,
-          productionCount: 0,
-        });
-      }
-    });
-
-    // Add production artikelnummern
-    productionData.forEach((entry) => {
-      if (!entry.artikelnummer) return;
-      const existing = artMap.get(entry.artikelnummer);
-      if (existing) {
-        existing.inProduction = true;
-        existing.productionCount++;
-      } else {
-        artMap.set(entry.artikelnummer, {
-          artikelnummer: entry.artikelnummer,
-          inSales: false,
-          inProduction: true,
-          salesCount: 0,
-          productionCount: 1,
-        });
-      }
-    });
-
-    return Array.from(artMap.values()).sort((a, b) =>
-      a.artikelnummer.localeCompare(b.artikelnummer)
-    );
-  }, [salesData, productionData]);
-
-  // Build summary statistics
-  const summary: ComparisonSummary = useMemo(() => {
-    const pnrStats = {
-      total: projektnummernList.length,
-      inAllThree: 0,
-      inSalesAndProduction: 0,
-      inSalesAndProject: 0,
-      inProductionAndProject: 0,
-      onlyInSales: 0,
-      onlyInProduction: 0,
-      onlyInProject: 0,
-    };
-
-    projektnummernList.forEach((item) => {
-      const count = (item.inSales ? 1 : 0) + (item.inProduction ? 1 : 0) + (item.inProjectManagement ? 1 : 0);
-
-      if (count === 3) {
-        pnrStats.inAllThree++;
-      } else if (count === 2) {
-        if (item.inSales && item.inProduction) pnrStats.inSalesAndProduction++;
-        if (item.inSales && item.inProjectManagement) pnrStats.inSalesAndProject++;
-        if (item.inProduction && item.inProjectManagement) pnrStats.inProductionAndProject++;
-      } else {
-        if (item.inSales) pnrStats.onlyInSales++;
-        if (item.inProduction) pnrStats.onlyInProduction++;
-        if (item.inProjectManagement) pnrStats.onlyInProject++;
-      }
-    });
-
-    const artStats = {
-      total: artikelnummernList.length,
-      inBoth: artikelnummernList.filter(a => a.inSales && a.inProduction).length,
-      onlyInSales: artikelnummernList.filter(a => a.inSales && !a.inProduction).length,
-      onlyInProduction: artikelnummernList.filter(a => !a.inSales && a.inProduction).length,
-    };
-
-    return {
-      projektnummern: pnrStats,
-      artikelnummern: artStats,
-    };
-  }, [projektnummernList, artikelnummernList]);
+    controlling: controllingData.length,
+    uniquePnrSales: uniqueCounts.sales,
+    uniquePnrProduction: uniqueCounts.production,
+    uniquePnrControlling: uniqueCounts.controlling,
+  }), [salesData, productionData, controllingData, uniqueCounts]);
 
   return {
     loading,
     error,
     counts,
-    summary,
-    projektnummernList,
-    artikelnummernList,
+    matches,
     refresh: fetchData,
   };
 }

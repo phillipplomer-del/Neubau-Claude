@@ -90,7 +90,8 @@ export const DEFAULT_MAPPINGS: Record<Department, ColumnMapping[]> = {
 
     // Order info
     { excelColumn: 'OrderNumber', internalField: 'deliveryNumber', required: false },
-    { excelColumn: 'BookingDate', internalField: 'importedAt', required: false, transform: parseExcelDate },
+    { excelColumn: 'BookingDate', internalField: 'bookingDate', required: false, transform: parseExcelDate },
+    { excelColumn: 'Buchungsdatum', internalField: 'bookingDate', required: false, transform: parseExcelDate }, // German alternative
 
     // Customer
     { excelColumn: 'CustomerNumber', internalField: 'customerNumber', required: false },
@@ -210,7 +211,13 @@ export function mapRowData(
       ? mapping.transform(excelValue)
       : excelValue;
 
-    mapped[mapping.internalField] = value;
+    // Only set value if it's non-null, or if the field hasn't been set yet
+    // This allows multiple Excel columns to map to the same internal field (e.g., BookingDate and Buchungsdatum)
+    if (value !== null && value !== undefined) {
+      mapped[mapping.internalField] = value;
+    } else if (!(mapping.internalField in mapped)) {
+      mapped[mapping.internalField] = value;
+    }
   }
 
   // Generate stable ID based on mapped data

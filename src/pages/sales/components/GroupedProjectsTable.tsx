@@ -240,7 +240,7 @@ export default function GroupedProjectsTable({ data, onRowClick, statusMap }: Gr
                       <td className="px-1.5 py-1.5"></td>
                       <td className="px-1.5 py-1.5 text-foreground">{safeString(entry.deliveryNumber)}</td>
                       <td className="px-1.5 py-1.5 text-foreground">{safeString(entry.projektnummer)}</td>
-                      <td className="px-1.5 py-1.5 text-foreground">{formatDate(entry.importedAt)}</td>
+                      <td className="px-1.5 py-1.5 text-foreground">{formatDate(entry.bookingDate)}</td>
                       <td className="px-1.5 py-1.5 text-foreground">{safeString(entry.customerNumber)}</td>
                       <td className="px-1.5 py-1.5 text-foreground">
                         <span className="block truncate" title={safeString(entry.customerName)}>

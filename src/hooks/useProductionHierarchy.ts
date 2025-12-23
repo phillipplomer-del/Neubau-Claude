@@ -159,15 +159,15 @@ function isNodeFullyCompleted(node: HierarchyNode): boolean {
 
 /**
  * Build hierarchy from flat production entries
+ * Structure: Project → Article → PA → Operations
  */
 function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
-  // Group entries by: Project → Article → MainPA → PA → Operations
-  const projectMap = new Map<string, Map<string, Map<string, Map<string, ProductionEntry[]>>>>();
+  // Group entries by: Project → Article → PA → Operations
+  const projectMap = new Map<string, Map<string, Map<string, ProductionEntry[]>>>();
 
   for (const entry of entries) {
     const projectKey = isValidValue(entry.projektnummer) ? entry.projektnummer : '__NO_PROJECT__';
     const articleKey = isValidValue(entry.artikelnummer) ? entry.artikelnummer : '__NO_ARTICLE__';
-    const mainPAKey = isValidValue(entry.mainWorkOrderNumber) ? entry.mainWorkOrderNumber : '__NO_MAIN_PA__';
     const paKey = isValidValue(entry.workOrderNumber) ? entry.workOrderNumber : '__NO_PA__';
 
     if (!projectMap.has(projectKey)) {
@@ -178,12 +178,7 @@ function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
     if (!articleMap.has(articleKey)) {
       articleMap.set(articleKey, new Map());
     }
-    const mainPAMap = articleMap.get(articleKey)!;
-
-    if (!mainPAMap.has(mainPAKey)) {
-      mainPAMap.set(mainPAKey, new Map());
-    }
-    const paMap = mainPAMap.get(mainPAKey)!;
+    const paMap = articleMap.get(articleKey)!;
 
     if (!paMap.has(paKey)) {
       paMap.set(paKey, []);
@@ -197,116 +192,78 @@ function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
   projectMap.forEach((articleMap, projectKey) => {
     const isNoProject = projectKey === '__NO_PROJECT__';
 
-    // Build article nodes
+    // Build Article nodes under project
     const articleNodes: HierarchyNode[] = [];
 
-    articleMap.forEach((mainPAMap, articleKey) => {
+    articleMap.forEach((paMap, articleKey) => {
       const isNoArticle = articleKey === '__NO_ARTICLE__';
 
-      // Build main PA nodes
-      const mainPANodes: HierarchyNode[] = [];
+      // Build PA nodes under article
+      const paNodes: HierarchyNode[] = [];
 
-      mainPAMap.forEach((paMap, mainPAKey) => {
-        const isNoMainPA = mainPAKey === '__NO_MAIN_PA__';
+      paMap.forEach((operations, paKey) => {
+        const isNoPA = paKey === '__NO_PA__';
 
-        // Build PA nodes
-        const paNodes: HierarchyNode[] = [];
-
-        paMap.forEach((operations, paKey) => {
-          const isNoPA = paKey === '__NO_PA__';
-
-            // Build operation nodes (leaf nodes)
-          const operationNodes: HierarchyNode[] = operations.map((entry, idx) => {
-            const opName = entry.notes || entry.operationNumber || `Operation ${idx + 1}`;
-            return {
-              id: `op-${entry.id || idx}`,
-              type: 'operation' as const,
-              name: opName,
-              identifier: entry.operationNumber || '',
-              children: [],
-              plannedHours: entry.plannedHours || 0,
-              actualHours: entry.actualHours || 0,
-              plannedCosts: entry.plannedCosts || 0,
-              actualCosts: entry.actualCosts || 0,
-              hoursVariance: (entry.actualHours || 0) - (entry.plannedHours || 0),
-              costsVariance: (entry.actualCosts || 0) - (entry.plannedCosts || 0),
-              startDate: entry.plannedStartDate,
-              endDate: entry.plannedEndDate,
-              completionPercentage: entry.completionPercentage || 0,
-              isActive: entry.active === 'X' || entry.active === true,
-              status: entry.status,
-              operationCount: 1,
-              paCount: 0,
-              entry,
-            };
-          });
-
-          // PA node (aggregates operations)
-          // Always create PA node if we have a PA number
-          if (!isNoPA) {
-            const paNode = aggregateNode({
-              id: `pa-${paKey}`,
-              type: 'pa',
-              name: `PA ${paKey}`,
-              identifier: paKey,
-              articleNumber: isNoArticle ? undefined : articleKey,
-              children: operationNodes,
-            });
-            paNodes.push(paNode);
-          } else {
-            // No PA - add operations directly
-            paNodes.push(...operationNodes);
-          }
+        // Build operation nodes (leaf nodes)
+        const operationNodes: HierarchyNode[] = operations.map((entry, idx) => {
+          const opName = entry.notes || entry.operationNumber || `Operation ${idx + 1}`;
+          // Convert from minutes to hours (data comes in minutes from Excel)
+          const plannedHours = (entry.plannedHours || 0) / 60;
+          const actualHours = (entry.actualHours || 0) / 60;
+          return {
+            id: `op-${entry.id || idx}`,
+            type: 'operation' as const,
+            name: opName,
+            identifier: entry.operationNumber || '',
+            children: [],
+            plannedHours,
+            actualHours,
+            plannedCosts: entry.plannedCosts || 0,
+            actualCosts: entry.actualCosts || 0,
+            hoursVariance: actualHours - plannedHours,
+            costsVariance: (entry.actualCosts || 0) - (entry.plannedCosts || 0),
+            startDate: entry.plannedStartDate,
+            endDate: entry.plannedEndDate,
+            completionPercentage: entry.completionPercentage || 0,
+            isActive: entry.active === 'X' || entry.active === true,
+            status: entry.status,
+            operationCount: 1,
+            paCount: 0,
+            entry,
+          };
         });
 
-        // Main PA node - always create if we have a MainPA number
-        // Even if PA = MainPA, we still want the structure
-        if (!isNoMainPA) {
-          // Check if there's exactly one PA with the same number as MainPA
-          // In that case, don't create a separate MainPA level to avoid duplication
-          const firstPA = paNodes[0];
-          const hasSamePA = paNodes.length === 1 &&
-            firstPA &&
-            firstPA.type === 'pa' &&
-            firstPA.identifier === mainPAKey;
-
-          if (hasSamePA) {
-            // PA = MainPA, just use the PA node directly
-            mainPANodes.push(...paNodes);
-          } else {
-            // Multiple PAs or different number - create MainPA container
-            const mainPANode = aggregateNode({
-              id: `mainpa-${mainPAKey}`,
-              type: 'mainPA',
-              name: `Haupt-PA ${mainPAKey}`,
-              identifier: mainPAKey,
-              articleNumber: isNoArticle ? undefined : articleKey,
-              children: paNodes,
-            });
-            mainPANodes.push(mainPANode);
-          }
+        // PA node (aggregates operations)
+        if (!isNoPA) {
+          const paNode = aggregateNode({
+            id: `pa-${projectKey}-${articleKey}-${paKey}`,
+            type: 'pa',
+            name: `PA ${paKey}`,
+            identifier: paKey,
+            articleNumber: isNoArticle ? undefined : articleKey,
+            children: operationNodes,
+          });
+          paNodes.push(paNode);
         } else {
-          // No MainPA - add PA nodes directly
-          mainPANodes.push(...paNodes);
+          // No PA - add operations directly
+          paNodes.push(...operationNodes);
         }
       });
 
-      // Article node - always create if we have an article number
+      // Article node (aggregates PAs)
       if (!isNoArticle) {
-        const firstEntry = findFirstEntry(mainPANodes);
-        const description = firstEntry?.productDescription || articleKey;
-
         const articleNode = aggregateNode({
-          id: `article-${articleKey}`,
+          id: `article-${projectKey}-${articleKey}`,
           type: 'article',
-          name: description,
+          name: `Artikel ${articleKey}`,
           identifier: articleKey,
-          children: mainPANodes,
+          articleNumber: articleKey,
+          children: paNodes,
         });
         articleNodes.push(articleNode);
       } else {
-        // No article - add mainPA nodes directly
-        articleNodes.push(...mainPANodes);
+        // No article - add PAs directly
+        articleNodes.push(...paNodes);
       }
     });
 
@@ -326,22 +283,8 @@ function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
     }
   });
 
-  // Sort by identifier
+  // Sort by identifier (numeric sorting ensures PA order: small → large = production sequence)
   return sortNodes(rootNodes);
-}
-
-/**
- * Find first entry in node tree (for getting descriptions)
- */
-function findFirstEntry(nodes: HierarchyNode[]): ProductionEntry | undefined {
-  for (const node of nodes) {
-    if (node.entry) return node.entry;
-    if (node.children.length > 0) {
-      const found = findFirstEntry(node.children);
-      if (found) return found;
-    }
-  }
-  return undefined;
 }
 
 /**
