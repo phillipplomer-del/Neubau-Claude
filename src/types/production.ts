@@ -10,35 +10,44 @@ export interface ProductionEntry extends BaseEntry {
 
   // Planning information
   planningNumber?: string;
-  workOrderNumber?: string;
+  workOrderNumber?: string;      // PaNummer
+  mainWorkOrderNumber?: string;  // HauptPaNummer
 
   // Product information
   productDescription?: string;
   quantity?: number;
   unit?: string;
 
-  // Dates (Soll = Planned, Ist = Actual)
-  plannedStartDate?: Date; // Soll-Start
-  actualStartDate?: Date; // Ist-Start
-  plannedEndDate?: Date; // Soll-Ende
-  actualEndDate?: Date; // Ist-Ende
+  // Dates (on PA level)
+  plannedStartDate?: Date; // StartDatum
+  plannedEndDate?: Date;   // EndDatum
+  actualStartDate?: Date;
+  actualEndDate?: Date;
 
-  // Resource planning
-  plannedHours?: number; // Soll-Stunden
-  actualHours?: number; // Ist-Stunden
+  // Resource planning (Soll-Ist)
+  plannedHours?: number;   // Soll
+  actualHours?: number;    // Ist
+  plannedCosts?: number;   // Soll €
+  actualCosts?: number;    // Ist €
   resourceName?: string;
   machineId?: string;
 
-  // Progress
-  completionPercentage?: number;
-  status?: 'planned' | 'in_progress' | 'delayed' | 'completed' | 'on_hold';
+  // Progress & Status
+  completionPercentage?: number; // % Ist
+  status?: string;               // PA Status (open/closed)
+  active?: boolean | string;     // Aktiv (X = active)
+
+  // Grouping
+  group?: string;                // Gruppe
+
+  // Operation (Arbeitsgang)
+  operationNumber?: string;      // Arbeitsgangnummer
+  notes?: string;                // DescriptionText (Arbeitsgang-Beschreibung)
 
   // Variance analysis
-  dateVariance?: number; // days difference
-  hoursVariance?: number; // hours difference
+  dateVariance?: number;
+  hoursVariance?: number;
 
-  // Additional fields
-  notes?: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
 }
 
