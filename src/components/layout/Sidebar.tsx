@@ -9,6 +9,10 @@ import {
   TrendingUp,
   Folders,
   GitCompare,
+  BarChart3,
+  PieChart,
+  LineChart,
+  Activity,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -57,6 +61,15 @@ const navigation: NavSection[] = [
     title: 'Datenabgleich',
     items: [
       { label: 'Vergleich', path: '/datacomparison', icon: GitCompare },
+    ],
+  },
+  {
+    title: 'Visualisierung',
+    items: [
+      { label: 'Ansicht 1', path: '/visualization/view1', icon: BarChart3 },
+      { label: 'Ansicht 2', path: '/visualization/view2', icon: PieChart },
+      { label: 'Ansicht 3', path: '/visualization/view3', icon: LineChart },
+      { label: 'Ansicht 4', path: '/visualization/view4', icon: Activity },
     ],
   },
 ];
