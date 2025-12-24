@@ -307,9 +307,9 @@ function GanttRow({
             return (
               <div
                 className={`
-                  absolute top-2 h-6 rounded border
+                  absolute top-2 h-6 rounded-sm border overflow-hidden
                   ${getBarColor(node).replace('bg-', 'border-')}
-                  bg-opacity-30 cursor-pointer
+                  cursor-pointer
                 `}
                 style={{
                   left: `${barStyle.left}px`,
@@ -319,7 +319,7 @@ function GanttRow({
                 title={`${node.name}\n${formatDate(node.startDate)} - ${formatDate(node.endDate)}\nSoll: ${node.plannedHours.toFixed(1)}h | Ist: ${node.actualHours.toFixed(1)}h`}
               >
                 <div
-                  className={`absolute top-0 left-0 h-full ${getBarColor(node)} rounded-l ${sollIstProgress >= 100 ? 'rounded-r' : ''}`}
+                  className={`absolute top-0 left-0 h-full ${getBarColor(node)}`}
                   style={{ width: `${sollIstProgress}%` }}
                 />
               </div>

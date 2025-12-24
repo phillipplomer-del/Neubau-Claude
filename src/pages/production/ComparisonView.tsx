@@ -3,7 +3,7 @@
  * Hierarchical tree view of production data with planned vs actual comparison
  */
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useProductionHierarchy, type HierarchyNode } from '@/hooks/useProductionHierarchy';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -69,20 +69,20 @@ function getNodeIcon(type: HierarchyNode['type'], isExpanded: boolean) {
 }
 
 /**
- * Get background color for node type
+ * Get background style for node type
  */
-function getNodeBgClass(type: HierarchyNode['type']): string {
+function getNodeBgStyle(type: HierarchyNode['type']): React.CSSProperties {
   switch (type) {
     case 'project':
-      return 'bg-blue-50 dark:bg-blue-950/30';
+      return { backgroundColor: 'rgba(59, 130, 246, 0.08)' }; // blue-500 at 8%
     case 'article':
-      return 'bg-green-50 dark:bg-green-950/30';
+      return { backgroundColor: 'rgba(34, 197, 94, 0.08)' };  // green-500 at 8%
     case 'mainPA':
-      return 'bg-orange-50 dark:bg-orange-950/30';
+      return { backgroundColor: 'rgba(249, 115, 22, 0.08)' }; // orange-500 at 8%
     case 'pa':
-      return 'bg-purple-50 dark:bg-purple-950/30';
+      return { backgroundColor: 'rgba(168, 85, 247, 0.08)' }; // purple-500 at 8%
     case 'operation':
-      return '';
+      return {};
   }
 }
 
@@ -110,12 +110,8 @@ function HierarchyRow({ node, level, expandedNodes, onToggle, showCosts }: Hiera
   return (
     <>
       <div
-        className={`
-          flex items-center gap-2 py-2 px-3 border-b border-border/50
-          hover:bg-muted/50 transition-colors cursor-pointer
-          ${getNodeBgClass(node.type)}
-        `}
-        style={{ paddingLeft: `${level * 24 + 12}px` }}
+        className="flex items-center gap-2 py-2 px-3 border-b border-border/50 hover:bg-muted/50 transition-colors cursor-pointer"
+        style={{ paddingLeft: `${level * 24 + 12}px`, ...getNodeBgStyle(node.type) }}
         onClick={() => hasChildren && onToggle(node.id)}
       >
         {/* Expand/Collapse button */}
