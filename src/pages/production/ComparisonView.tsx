@@ -7,6 +7,7 @@ import React, { useState, useMemo } from 'react';
 import { useProductionHierarchy, type HierarchyNode } from '@/hooks/useProductionHierarchy';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import ToggleSwitch from '@/components/ui/ToggleSwitch';
 import {
   RefreshCw,
   AlertCircle,
@@ -477,25 +478,17 @@ export default function ComparisonView() {
         </div>
 
         {/* Toggles */}
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={hideCompleted}
-              onChange={(e) => setHideCompleted(e.target.checked)}
-              className="rounded border-border"
-            />
-            <span>Abgeschlossene ausblenden</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showCosts}
-              onChange={(e) => setShowCosts(e.target.checked)}
-              className="rounded border-border"
-            />
-            <span>Kosten anzeigen</span>
-          </label>
+        <div className="flex items-center gap-6">
+          <ToggleSwitch
+            checked={hideCompleted}
+            onChange={(e) => setHideCompleted(e.target.checked)}
+            label="Abgeschlossene ausblenden"
+          />
+          <ToggleSwitch
+            checked={showCosts}
+            onChange={(e) => setShowCosts(e.target.checked)}
+            label="Kosten anzeigen"
+          />
         </div>
       </div>
 

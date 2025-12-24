@@ -185,19 +185,56 @@ function calculateBarStyle(
   return { left: Math.max(0, left), width };
 }
 
+// Light mode colors (Aqua)
+const AQUA_COLORS_LIGHT = {
+  primary: '#00E097',    // mint
+  secondary: '#00DEE0',  // cyan
+  accent: '#0050E0',     // blue
+};
+
+// Dark mode colors (Gold/Lime)
+const AQUA_COLORS_DARK = {
+  primary: '#E0BD00',    // gold
+  secondary: '#9EE000',  // lime
+  accent: '#45F600',     // green
+};
+
+// Hook to detect dark mode
+function useDarkMode() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+
+    checkDarkMode();
+
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return isDark;
+}
+
 /**
- * Get bar color based on variance
+ * Get bar gradient based on dark mode
  */
-function getBarColor(node: SalesLedNode): string {
-  if (!node.plannedHours || node.plannedHours === 0) {
-    return 'bg-gray-400 dark:bg-gray-600';
-  }
+function getBarGradient(isDark: boolean): string {
+  const colors = isDark ? AQUA_COLORS_DARK : AQUA_COLORS_LIGHT;
+  return `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`;
+}
 
-  const variance = (node.actualHours - node.plannedHours) / node.plannedHours;
-
-  if (variance < -0.1) return 'bg-green-500 dark:bg-green-600';
-  if (variance > 0.1) return 'bg-red-500 dark:bg-red-600';
-  return 'bg-blue-500 dark:bg-blue-600';
+/**
+ * Get AQUA colors based on dark mode
+ */
+function getAquaColors(isDark: boolean) {
+  return isDark ? AQUA_COLORS_DARK : AQUA_COLORS_LIGHT;
 }
 
 function formatDate(date: Date | undefined): string {
@@ -214,6 +251,7 @@ interface GanttRowProps {
   timelineEnd: Date;
   dayWidth: number;
   timelineWidth: number;
+  isDark: boolean;
 }
 
 function GanttRow({
@@ -225,10 +263,12 @@ function GanttRow({
   timelineEnd,
   dayWidth,
   timelineWidth,
+  isDark,
 }: GanttRowProps) {
   const isExpanded = expandedNodes.has(node.id);
   const hasChildren = node.children.length > 0 && node.type !== 'noProduction';
   const barStyle = node.hasProduction ? calculateBarStyle(node.startDate, node.endDate, timelineStart, timelineEnd, dayWidth) : null;
+  const AQUA_COLORS = getAquaColors(isDark);
 
   // Row styling based on type
   const getRowBgClass = () => {
@@ -304,29 +344,31 @@ function GanttRow({
               ? Math.min((node.actualHours / node.plannedHours) * 100, 100)
               : 0;
 
+            // Use theme-appropriate background color
+            const bgColor = isDark ? 'rgba(224, 189, 0, 0.15)' : 'rgba(0, 224, 151, 0.15)';
+
             return (
               <div
-                className={`
-                  absolute top-2 h-6 rounded-sm border overflow-hidden
-                  ${getBarColor(node).replace('bg-', 'border-')}
-                  cursor-pointer
-                `}
+                className="absolute top-2 h-6 rounded-md overflow-hidden cursor-pointer"
                 style={{
                   left: `${barStyle.left}px`,
                   width: `${barStyle.width}px`,
-                  backgroundColor: 'rgba(156, 163, 175, 0.2)',
+                  backgroundColor: bgColor,
                 }}
                 title={`${node.name}\n${formatDate(node.startDate)} - ${formatDate(node.endDate)}\nSoll: ${node.plannedHours.toFixed(1)}h | Ist: ${node.actualHours.toFixed(1)}h`}
               >
                 <div
-                  className={`absolute top-0 left-0 h-full ${getBarColor(node)}`}
-                  style={{ width: `${sollIstProgress}%` }}
+                  className="absolute top-0 left-0 h-full rounded-md"
+                  style={{
+                    width: `${sollIstProgress}%`,
+                    background: getBarGradient(isDark),
+                  }}
                 />
               </div>
             );
           })()}
 
-          {/* Milestones - BookingDate (blue) and DeliveryDate (purple) */}
+          {/* Milestones - BookingDate and DeliveryDate in Aqua colors */}
           {(node.type === 'project' || node.type === 'article') && (
             <>
               {/* Booking Date */}
@@ -343,7 +385,14 @@ function GanttRow({
                     style={{ left: `${position}px` }}
                     title={`Buchung: ${formatDate(node.bookingDate)}`}
                   >
-                    <div className="w-4 h-4 bg-blue-500 rotate-45 transform -translate-x-1/2 shadow-md border-2 border-white dark:border-gray-800" />
+                    <div
+                      className="w-3.5 h-3.5 rotate-45 transform -translate-x-1/2"
+                      style={{
+                        backgroundColor: AQUA_COLORS.primary,
+                        opacity: 0.6,
+                        boxShadow: `0 0 8px ${AQUA_COLORS.primary}40`,
+                      }}
+                    />
                   </div>
                 );
               })()}
@@ -362,7 +411,14 @@ function GanttRow({
                     style={{ left: `${position}px` }}
                     title={`Liefertermin: ${formatDate(node.deliveryDate)}`}
                   >
-                    <div className="w-4 h-4 bg-purple-500 rotate-45 transform -translate-x-1/2 shadow-md border-2 border-white dark:border-gray-800" />
+                    <div
+                      className="w-3.5 h-3.5 rotate-45 transform -translate-x-1/2"
+                      style={{
+                        backgroundColor: AQUA_COLORS.accent,
+                        opacity: 0.6,
+                        boxShadow: `0 0 8px ${AQUA_COLORS.accent}40`,
+                      }}
+                    />
                   </div>
                 );
               })()}
@@ -383,6 +439,7 @@ function GanttRow({
           timelineEnd={timelineEnd}
           dayWidth={dayWidth}
           timelineWidth={timelineWidth}
+          isDark={isDark}
         />
       ))}
     </>
@@ -390,6 +447,9 @@ function GanttRow({
 }
 
 export default function GanttView() {
+  const isDark = useDarkMode();
+  const AQUA_COLORS = getAquaColors(isDark);
+
   const [viewMode, setViewMode] = useState<ViewMode>('projects');
   const [searchQuery, setSearchQuery] = useState('');
   const [zoom, setZoom] = useState<ZoomLevel>('week');
@@ -605,11 +665,16 @@ export default function GanttView() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Gantt-Ansicht</h1>
+          <h1
+            className="text-[26px] font-bold text-foreground"
+            style={{ fontFamily: 'var(--font-display)', lineHeight: 1.2 }}
+          >
+            Gantt-Ansicht
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {viewMode === 'projects' ? (
               <>
@@ -629,17 +694,17 @@ export default function GanttView() {
         </div>
         <div className="flex items-center gap-2">
           {/* View mode toggle */}
-          <div className="flex items-center gap-1 bg-muted rounded-md p-1">
+          <div className="flex items-center gap-1 bg-card-muted rounded-[var(--radius-chip)] p-1">
             <button
               onClick={() => setViewMode('projects')}
-              className={`px-3 py-1.5 text-sm rounded flex items-center gap-1.5 ${viewMode === 'projects' ? 'bg-background shadow' : ''}`}
+              className={`px-3 py-1.5 text-sm rounded-[var(--radius-chip)] flex items-center gap-1.5 transition-all duration-300 ${viewMode === 'projects' ? 'gradient-main text-white shadow-[var(--shadow-chip)]' : 'text-muted-foreground hover:text-foreground'}`}
             >
               <Layers className="h-4 w-4" />
               Projekte
             </button>
             <button
               onClick={() => setViewMode('articles')}
-              className={`px-3 py-1.5 text-sm rounded flex items-center gap-1.5 ${viewMode === 'articles' ? 'bg-background shadow' : ''}`}
+              className={`px-3 py-1.5 text-sm rounded-[var(--radius-chip)] flex items-center gap-1.5 transition-all duration-300 ${viewMode === 'articles' ? 'gradient-main text-white shadow-[var(--shadow-chip)]' : 'text-muted-foreground hover:text-foreground'}`}
             >
               <Package className="h-4 w-4" />
               Einzelartikel
@@ -654,7 +719,7 @@ export default function GanttView() {
               placeholder={viewMode === 'projects' ? 'Projekt suchen...' : 'Artikel suchen...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 text-sm border border-border rounded-md bg-background w-64 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="pl-9 pr-4 py-2 text-sm rounded-[var(--radius-input)] bg-card-muted w-64 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
             />
           </div>
 
@@ -683,41 +748,41 @@ export default function GanttView() {
       {/* Zoom controls */}
       <div className="flex items-center gap-4">
         <span className="text-sm text-muted-foreground">Zoom:</span>
-        <div className="flex items-center gap-1 bg-muted rounded-md p-1">
+        <div className="flex items-center gap-1 bg-card-muted rounded-[var(--radius-chip)] p-1">
           <button
             onClick={() => setZoom('day')}
-            className={`px-3 py-1 text-sm rounded ${zoom === 'day' ? 'bg-background shadow' : ''}`}
+            className={`px-3 py-1.5 text-sm rounded-[var(--radius-chip)] transition-all duration-300 ${zoom === 'day' ? 'gradient-main text-white shadow-[var(--shadow-chip)]' : 'text-muted-foreground hover:text-foreground'}`}
           >
             Tag
           </button>
           <button
             onClick={() => setZoom('week')}
-            className={`px-3 py-1 text-sm rounded ${zoom === 'week' ? 'bg-background shadow' : ''}`}
+            className={`px-3 py-1.5 text-sm rounded-[var(--radius-chip)] transition-all duration-300 ${zoom === 'week' ? 'gradient-main text-white shadow-[var(--shadow-chip)]' : 'text-muted-foreground hover:text-foreground'}`}
           >
             Woche
           </button>
           <button
             onClick={() => setZoom('month')}
-            className={`px-3 py-1 text-sm rounded ${zoom === 'month' ? 'bg-background shadow' : ''}`}
+            className={`px-3 py-1.5 text-sm rounded-[var(--radius-chip)] transition-all duration-300 ${zoom === 'month' ? 'gradient-main text-white shadow-[var(--shadow-chip)]' : 'text-muted-foreground hover:text-foreground'}`}
           >
             Monat
           </button>
           <button
             onClick={() => setZoom('quarter')}
-            className={`px-3 py-1 text-sm rounded ${zoom === 'quarter' ? 'bg-background shadow' : ''}`}
+            className={`px-3 py-1.5 text-sm rounded-[var(--radius-chip)] transition-all duration-300 ${zoom === 'quarter' ? 'gradient-main text-white shadow-[var(--shadow-chip)]' : 'text-muted-foreground hover:text-foreground'}`}
           >
             Quartal
           </button>
           <button
             onClick={() => setZoom('year')}
-            className={`px-3 py-1 text-sm rounded ${zoom === 'year' ? 'bg-background shadow' : ''}`}
+            className={`px-3 py-1.5 text-sm rounded-[var(--radius-chip)] transition-all duration-300 ${zoom === 'year' ? 'gradient-main text-white shadow-[var(--shadow-chip)]' : 'text-muted-foreground hover:text-foreground'}`}
           >
             Jahr
           </button>
         </div>
         <button
           onClick={fitToView}
-          className="px-3 py-1 text-sm rounded bg-muted hover:bg-muted/80 border"
+          className="px-3 py-1.5 text-sm rounded-[var(--radius-chip)] bg-card-muted text-muted-foreground hover:text-foreground transition-all duration-300"
           title="Ansicht einpassen"
         >
           Einpassen
@@ -725,33 +790,41 @@ export default function GanttView() {
 
         {/* Legend */}
         <div className="flex items-center gap-4 ml-auto text-sm">
-          <div className="flex items-center gap-1">
-            <div className="w-6 h-3 rounded border border-green-500 bg-gray-200 relative overflow-hidden">
-              <div className="absolute left-0 top-0 h-full w-1/2 bg-green-500" />
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-8 h-3 rounded-md relative overflow-hidden"
+              style={{ backgroundColor: isDark ? 'rgba(224, 189, 0, 0.15)' : 'rgba(0, 224, 151, 0.15)' }}
+            >
+              <div
+                className="absolute left-0 top-0 h-full w-2/3 rounded-md"
+                style={{ background: `linear-gradient(135deg, ${AQUA_COLORS.primary} 0%, ${AQUA_COLORS.secondary} 100%)` }}
+              />
             </div>
-            <span className="text-muted-foreground">Unter Soll</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-6 h-3 rounded border border-blue-500 bg-gray-200 relative overflow-hidden">
-              <div className="absolute left-0 top-0 h-full w-3/4 bg-blue-500" />
-            </div>
-            <span className="text-muted-foreground">Im Soll</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-6 h-3 rounded border border-red-500 bg-gray-200 relative overflow-hidden">
-              <div className="absolute left-0 top-0 h-full w-full bg-red-500" />
-            </div>
-            <span className="text-muted-foreground">Über Soll</span>
+            <span className="text-muted-foreground">Ist/Soll Fortschritt</span>
           </div>
 
           {/* Milestone legend */}
           <div className="border-l border-border pl-4 flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-blue-500 rotate-45" />
+            <div className="flex items-center gap-1.5">
+              <div
+                className="w-2.5 h-2.5 rotate-45"
+                style={{
+                  backgroundColor: AQUA_COLORS.primary,
+                  opacity: 0.6,
+                  boxShadow: `0 0 6px ${AQUA_COLORS.primary}40`,
+                }}
+              />
               <span className="text-muted-foreground text-xs">Buchung</span>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-purple-500 rotate-45" />
+            <div className="flex items-center gap-1.5">
+              <div
+                className="w-2.5 h-2.5 rotate-45"
+                style={{
+                  backgroundColor: AQUA_COLORS.accent,
+                  opacity: 0.6,
+                  boxShadow: `0 0 6px ${AQUA_COLORS.accent}40`,
+                }}
+              />
               <span className="text-muted-foreground text-xs">Liefertermin</span>
             </div>
           </div>
@@ -863,6 +936,7 @@ export default function GanttView() {
                     timelineEnd={timelineEnd}
                     dayWidth={dayWidth}
                     timelineWidth={timelineWidth}
+                    isDark={isDark}
                   />
                 ))}
               </div>

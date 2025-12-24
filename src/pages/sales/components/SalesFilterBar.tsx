@@ -4,6 +4,7 @@
  */
 
 import Button from '@/components/ui/Button';
+import Chip from '@/components/ui/Chip';
 import Input from '@/components/ui/Input';
 import type { FilterMode, SalesFilters, StatusFilter } from '@/hooks/useSalesFilters';
 
@@ -58,94 +59,86 @@ export default function SalesFilterBar({
     filters.statusFilter !== 'all';
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
+    <div className="rounded-[var(--radius-card)] bg-card p-4 shadow-[var(--shadow-card)]">
       <div className="flex items-center gap-3 flex-wrap">
-        {/* Quick Filter Buttons */}
+        {/* Quick Filter Chips */}
         <div className="flex items-center gap-2">
-          <Button
-            variant={filters.mode === 'all' ? 'primary' : 'outline'}
-            size="sm"
+          <Chip
+            active={filters.mode === 'all'}
             onClick={() => onFilterModeChange('all')}
           >
             Alle
-          </Button>
-          <Button
-            variant={filters.mode === 'projects' ? 'primary' : 'outline'}
-            size="sm"
+          </Chip>
+          <Chip
+            active={filters.mode === 'projects'}
             onClick={() => onFilterModeChange('projects')}
           >
             Projekte
-          </Button>
-          <Button
-            variant={filters.mode === 'articles' ? 'primary' : 'outline'}
-            size="sm"
+          </Chip>
+          <Chip
+            active={filters.mode === 'articles'}
             onClick={() => onFilterModeChange('articles')}
           >
             Artikel
-          </Button>
+          </Chip>
         </div>
 
-        <div className="h-6 w-px bg-border"></div>
+        <div className="h-6 w-px bg-border/50"></div>
 
-        {/* Status Filter Buttons */}
+        {/* Status Filter Chips */}
         <div className="flex items-center gap-2">
-          <Button
-            variant={filters.statusFilter === 'all' ? 'primary' : 'outline'}
-            size="sm"
+          <Chip
+            active={filters.statusFilter === 'all'}
             onClick={() => onStatusFilterChange('all')}
           >
             Alle Status
-          </Button>
-          <Button
-            variant={filters.statusFilter === 'critical' ? 'primary' : 'outline'}
-            size="sm"
+          </Chip>
+          <Chip
+            active={filters.statusFilter === 'critical'}
             onClick={() => onStatusFilterChange('critical')}
-            className={filters.statusFilter === 'critical' ? 'bg-red-600 hover:bg-red-700' : ''}
+            className={filters.statusFilter === 'critical' ? '!bg-[var(--danger)]' : ''}
           >
-            🔴 Kritisch
-          </Button>
-          <Button
-            variant={filters.statusFilter === 'at-risk' ? 'primary' : 'outline'}
-            size="sm"
+            Kritisch
+          </Chip>
+          <Chip
+            active={filters.statusFilter === 'at-risk'}
             onClick={() => onStatusFilterChange('at-risk')}
-            className={filters.statusFilter === 'at-risk' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+            className={filters.statusFilter === 'at-risk' ? '!bg-[var(--warning)] !text-foreground' : ''}
           >
-            🟠 Gefährdet
-          </Button>
-          <Button
-            variant={filters.statusFilter === 'watched' ? 'primary' : 'outline'}
-            size="sm"
+            Gefährdet
+          </Chip>
+          <Chip
+            active={filters.statusFilter === 'watched'}
             onClick={() => onStatusFilterChange('watched')}
-            className={filters.statusFilter === 'watched' ? 'bg-purple-600 hover:bg-purple-700' : ''}
+            className={filters.statusFilter === 'watched' ? '!bg-purple-600' : ''}
           >
-            🟣 Beobachtet
-          </Button>
-          <Button
-            variant={filters.statusFilter === 'none' ? 'primary' : 'outline'}
-            size="sm"
+            Beobachtet
+          </Chip>
+          <Chip
+            active={filters.statusFilter === 'none'}
             onClick={() => onStatusFilterChange('none')}
           >
             Keine Markierung
-          </Button>
+          </Chip>
         </div>
 
-        <div className="h-6 w-px bg-border"></div>
+        <div className="h-6 w-px bg-border/50"></div>
 
         {/* Search Field */}
         <div className="flex-1 min-w-[250px]">
-          <Input
-            id="search"
+          <input
             type="text"
             placeholder="Suche: Artikelnr., Projektnr., Kunde, Produkt, Projektverantw..."
             value={filters.searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full h-9 px-4 rounded-[var(--radius-input)] bg-card-muted text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
           />
         </div>
 
         {/* Year Filter */}
         <select
           id="year"
-          className="h-9 rounded-md border border-border bg-card text-foreground px-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          className="h-9 rounded-[var(--radius-chip)] border-none bg-card-muted text-foreground px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
           value={filters.year || ''}
           onChange={(e) => onYearChange(e.target.value || null)}
         >
@@ -160,7 +153,7 @@ export default function SalesFilterBar({
         {/* Month Filter */}
         <select
           id="month"
-          className="h-9 rounded-md border border-border bg-card text-foreground px-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-muted disabled:cursor-not-allowed"
+          className="h-9 rounded-[var(--radius-chip)] border-none bg-card-muted text-foreground px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
           value={filters.month || ''}
           onChange={(e) => onMonthChange(e.target.value || null)}
           disabled={filters.year === null}
@@ -176,7 +169,7 @@ export default function SalesFilterBar({
         {/* Reset Button */}
         {hasActiveFilters && (
           <>
-            <div className="h-6 w-px bg-border"></div>
+            <div className="h-6 w-px bg-border/50"></div>
             <Button variant="ghost" size="sm" onClick={onReset}>
               Zurücksetzen
             </Button>

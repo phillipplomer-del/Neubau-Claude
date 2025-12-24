@@ -5,7 +5,7 @@
  * 2. Projects per Category A/B/C
  */
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import {
   PieChart,
   Pie,
@@ -19,26 +19,74 @@ interface ProjectPieChartsProps {
   projects: ProjectEntry[];
 }
 
-// Purple gradient colors from design (will cycle through)
-const MANAGER_COLORS = [
-  'hsl(238.73, 83.53%, 66.67%)', // primary purple
-  'hsl(243.4, 75.36%, 58.63%)',  // chart-2
-  'hsl(244.52, 57.94%, 50.59%)', // chart-3
-  'hsl(243.65, 54.5%, 41.37%)', // chart-4
-  'hsl(242.17, 47.43%, 34.31%)', // chart-5
-  'hsl(238.73, 83.53%, 76.67%)', // lighter primary
-  'hsl(243.4, 75.36%, 68.63%)',  // lighter chart-2
-  'hsl(244.52, 57.94%, 60.59%)', // lighter chart-3
+// Light mode colors (Aqua)
+const MANAGER_COLORS_LIGHT = [
+  '#00E097', // mint (primary)
+  '#00DEE0', // cyan
+  '#00B8D4', // teal
+  '#0050E0', // blue
+  '#00C9A7', // sea green
+  '#40E0D0', // turquoise
+  '#00CED1', // dark cyan
+  '#20B2AA', // light sea green
 ];
 
-// Purple shades for categories
-const CATEGORY_COLORS = {
-  A: 'hsl(238.73, 83.53%, 66.67%)', // primary purple
-  B: 'hsl(243.4, 75.36%, 58.63%)',  // chart-2 darker purple
-  C: 'hsl(238.73, 83.53%, 86.67%)', // lighter purple/lavender
+// Dark mode colors (Gold/Lime)
+const MANAGER_COLORS_DARK = [
+  '#E0BD00', // gold (primary)
+  '#E0D900', // yellow
+  '#9EE000', // lime
+  '#45F600', // green
+  '#E0A200', // orange gold
+  '#D4E040', // yellow-lime
+  '#B8E000', // lime-green
+  '#8BC34A', // light green
+];
+
+// Light mode category colors
+const CATEGORY_COLORS_LIGHT = {
+  A: '#00E097', // mint (primary)
+  B: '#00DEE0', // cyan
+  C: '#0050E0', // blue
 };
 
+// Dark mode category colors
+const CATEGORY_COLORS_DARK = {
+  A: '#E0BD00', // gold (primary)
+  B: '#9EE000', // lime
+  C: '#45F600', // green
+};
+
+// Hook to detect dark mode
+function useDarkMode() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+
+    checkDarkMode();
+
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return isDark;
+}
+
 export default function ProjectPieCharts({ projects }: ProjectPieChartsProps) {
+  const isDark = useDarkMode();
+
+  // Select colors based on theme
+  const MANAGER_COLORS = isDark ? MANAGER_COLORS_DARK : MANAGER_COLORS_LIGHT;
+  const CATEGORY_COLORS = isDark ? CATEGORY_COLORS_DARK : CATEGORY_COLORS_LIGHT;
+
   // Aggregate by project manager
   const managerData = useMemo(() => {
     const counts = new Map<string, number>();
@@ -83,8 +131,8 @@ export default function ProjectPieCharts({ projects }: ProjectPieChartsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Projects per Project Manager */}
-      <div className="rounded-lg border border-border bg-card p-4">
-        <h3 className="text-base font-semibold text-foreground mb-4">
+      <div className="rounded-[var(--radius-card)] bg-card p-4 shadow-[var(--shadow-card)]">
+        <h3 className="text-base font-semibold text-foreground mb-4" style={{ fontFamily: 'var(--font-display)' }}>
           Projekte pro Projektleiter
         </h3>
         <div className="flex items-center">
@@ -105,6 +153,7 @@ export default function ProjectPieCharts({ projects }: ProjectPieChartsProps) {
                     <Cell
                       key={`cell-${index}`}
                       fill={MANAGER_COLORS[index % MANAGER_COLORS.length]}
+                      fillOpacity={0.85}
                     />
                   ))}
                 </Pie>
@@ -113,7 +162,8 @@ export default function ProjectPieCharts({ projects }: ProjectPieChartsProps) {
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
+                    boxShadow: 'var(--shadow-card)',
                   }}
                 />
               </PieChart>
@@ -144,8 +194,8 @@ export default function ProjectPieCharts({ projects }: ProjectPieChartsProps) {
       </div>
 
       {/* Projects per Category */}
-      <div className="rounded-lg border border-border bg-card p-4">
-        <h3 className="text-base font-semibold text-foreground mb-4">
+      <div className="rounded-[var(--radius-card)] bg-card p-4 shadow-[var(--shadow-card)]">
+        <h3 className="text-base font-semibold text-foreground mb-4" style={{ fontFamily: 'var(--font-display)' }}>
           Projekte je Kategorie
         </h3>
         <div className="flex items-center">
@@ -166,6 +216,7 @@ export default function ProjectPieCharts({ projects }: ProjectPieChartsProps) {
                     <Cell
                       key={`cell-${entry.category}`}
                       fill={CATEGORY_COLORS[entry.category as keyof typeof CATEGORY_COLORS]}
+                      fillOpacity={0.85}
                     />
                   ))}
                 </Pie>
@@ -174,7 +225,8 @@ export default function ProjectPieCharts({ projects }: ProjectPieChartsProps) {
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
+                    boxShadow: 'var(--shadow-card)',
                   }}
                 />
               </PieChart>

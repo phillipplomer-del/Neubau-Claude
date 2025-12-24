@@ -3,7 +3,7 @@
  * Shows aggregated financial metrics: Umsatz, VK, Aktuell, Voraussichtlich, Marge
  */
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -20,14 +20,46 @@ interface FinancialBarChartProps {
   projects: ProjectEntry[];
 }
 
-// Purple gradient colors from design (darkest to lightest)
-const COLORS = {
-  umsatz: 'hsl(238.73, 83.53%, 66.67%)',     // primary purple
-  vk: 'hsl(243.4, 75.36%, 58.63%)',          // chart-2
-  aktuell: 'hsl(244.52, 57.94%, 50.59%)',    // chart-3
-  voraussichtlich: 'hsl(243.65, 54.5%, 41.37%)', // chart-4
-  marge: 'hsl(242.17, 47.43%, 34.31%)',      // chart-5
+// Light mode colors (Aqua)
+const COLORS_LIGHT = {
+  umsatz: '#00E097',           // mint (primary)
+  vk: '#00DEE0',               // cyan
+  aktuell: '#00B8D4',          // teal
+  voraussichtlich: '#0050E0',  // blue
+  marge: '#00C9A7',            // sea green
 };
+
+// Dark mode colors (Gold/Lime)
+const COLORS_DARK = {
+  umsatz: '#E0BD00',           // gold (primary)
+  vk: '#E0D900',               // yellow
+  aktuell: '#9EE000',          // lime
+  voraussichtlich: '#45F600',  // green
+  marge: '#E0A200',            // orange gold
+};
+
+// Hook to detect dark mode
+function useDarkMode() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+
+    checkDarkMode();
+
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return isDark;
+}
 
 /**
  * Format currency value for display
@@ -43,6 +75,11 @@ function formatCurrency(value: number): string {
 }
 
 export default function FinancialBarChart({ projects }: FinancialBarChartProps) {
+  const isDark = useDarkMode();
+
+  // Select colors based on theme
+  const COLORS = isDark ? COLORS_DARK : COLORS_LIGHT;
+
   // Aggregate financial data
   const chartData = useMemo(() => {
     const totals = {
@@ -76,8 +113,8 @@ export default function FinancialBarChart({ projects }: FinancialBarChartProps) 
 
     const data = payload[0];
     return (
-      <div className="bg-card border border-border rounded-lg shadow-lg p-3">
-        <p className="font-semibold text-foreground">{data.payload.name}</p>
+      <div className="bg-card border border-border rounded-[12px] shadow-[var(--shadow-card)] p-3">
+        <p className="font-semibold text-foreground" style={{ fontFamily: 'var(--font-display)' }}>{data.payload.name}</p>
         <p className="text-sm text-muted-foreground">{formatCurrency(data.value)}</p>
       </div>
     );
@@ -88,8 +125,8 @@ export default function FinancialBarChart({ projects }: FinancialBarChartProps) 
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
-      <h3 className="text-sm font-semibold text-foreground mb-2 text-center">
+    <div className="rounded-[var(--radius-card)] bg-card p-4 shadow-[var(--shadow-card)]">
+      <h3 className="text-base font-semibold text-foreground mb-3 text-center" style={{ fontFamily: 'var(--font-display)' }}>
         Finanzübersicht (Summe aller Projekte)
       </h3>
       <div className="h-[200px]">
@@ -115,12 +152,34 @@ export default function FinancialBarChart({ projects }: FinancialBarChartProps) 
                 return value;
               }}
             />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <Bar
+              dataKey="value"
+              radius={[8, 8, 0, 0]}
+              onMouseEnter={(_, index) => {
+                const bars = document.querySelectorAll('.recharts-bar-rectangle');
+                bars.forEach((bar, i) => {
+                  if (i === index) {
+                    (bar as HTMLElement).style.filter = 'brightness(1.15)';
+                    (bar as HTMLElement).style.transform = 'scaleY(1.02)';
+                    (bar as HTMLElement).style.transformOrigin = 'bottom';
+                  }
+                });
+              }}
+              onMouseLeave={() => {
+                const bars = document.querySelectorAll('.recharts-bar-rectangle');
+                bars.forEach((bar) => {
+                  (bar as HTMLElement).style.filter = '';
+                  (bar as HTMLElement).style.transform = '';
+                });
+              }}
+            >
               {chartData.map((entry) => (
                 <Cell
                   key={entry.key}
                   fill={COLORS[entry.key as keyof typeof COLORS]}
+                  fillOpacity={0.85}
+                  style={{ transition: 'all 200ms ease' }}
                 />
               ))}
             </Bar>
@@ -129,12 +188,12 @@ export default function FinancialBarChart({ projects }: FinancialBarChartProps) 
       </div>
 
       {/* Summary below chart */}
-      <div className="mt-2 pt-2 border-t border-border grid grid-cols-5 gap-2 text-center">
+      <div className="mt-3 pt-3 border-t border-border grid grid-cols-5 gap-2 text-center">
         {chartData.map((item) => (
           <div key={item.key}>
             <div
               className="text-base font-bold"
-              style={{ color: COLORS[item.key as keyof typeof COLORS] }}
+              style={{ color: COLORS[item.key as keyof typeof COLORS], fontFamily: 'var(--font-display)' }}
             >
               {formatCurrency(item.value)}
             </div>

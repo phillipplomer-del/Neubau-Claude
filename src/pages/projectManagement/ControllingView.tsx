@@ -13,7 +13,9 @@ import ControllingChart from './components/ControllingChart';
 import ControllingKPIs from './components/ControllingKPIs';
 import ProjectPieCharts from './components/ProjectPieCharts';
 import FinancialBarChart from './components/FinancialBarChart';
+import Card, { CardContent } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import { FileDown, Trash2, Upload, BarChart3 } from 'lucide-react';
 
 export default function ControllingView() {
   const { data, projects, years, loading, error, clearData } = useControllingData();
@@ -95,10 +97,20 @@ export default function ControllingView() {
   const hasData = data.length > 0 || projects.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">Controlling</h1>
+        <div>
+          <h1
+            className="text-[26px] font-bold text-foreground"
+            style={{ fontFamily: 'var(--font-display)', lineHeight: 1.2 }}
+          >
+            Controlling
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Projektübersicht und Finanzanalyse
+          </p>
+        </div>
 
         <div className="flex items-center gap-3">
           {hasData && (
@@ -109,10 +121,12 @@ export default function ControllingView() {
                 onClick={handleExportPDF}
                 disabled={exporting}
               >
-                {exporting ? 'Exportiere...' : 'Als PDF exportieren'}
+                <FileDown className="h-4 w-4 mr-2" />
+                {exporting ? 'Exportiere...' : 'Als PDF'}
               </Button>
-              <Button variant="outline" size="sm" onClick={handleClearData}>
-                Daten löschen
+              <Button variant="ghost" size="sm" onClick={handleClearData}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Löschen
               </Button>
             </>
           )}
@@ -121,14 +135,16 @@ export default function ControllingView() {
 
       {/* Error Messages */}
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-          <p className="text-red-700">{error}</p>
-        </div>
+        <Card className="border-[var(--danger)]/30 bg-[var(--danger)]/5">
+          <CardContent className="py-4">
+            <p className="text-[var(--danger)]">{error}</p>
+          </CardContent>
+        </Card>
       )}
 
       {/* Content when data is available */}
       {hasData ? (
-        <div ref={reportRef} className="space-y-4">
+        <div ref={reportRef} className="space-y-6">
           {/* KPI Cards */}
           {projects.length > 0 && (
             <ControllingKPIs projects={projects} />
@@ -150,7 +166,7 @@ export default function ControllingView() {
           )}
 
           {/* Data Info */}
-          <div className="text-xs text-muted-foreground text-center">
+          <div className="text-xs text-muted-foreground text-center py-2">
             {projects.length > 0 && `${projects.length} Projekte`}
             {projects.length > 0 && data.length > 0 && ' • '}
             {data.length > 0 && `${data.length} Zeitreihen-Datenpunkte`}
@@ -158,19 +174,30 @@ export default function ControllingView() {
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-border bg-card p-12 text-center">
-          <div className="text-4xl mb-4">📊</div>
-          <p className="text-lg font-medium text-foreground">Keine Controlling-Daten vorhanden</p>
-          <p className="mt-2 text-muted-foreground">
-            Die Daten werden automatisch geladen, wenn Sie die Controlling.xlsx über die Import-Seite hochladen.
-          </p>
-          <Link
-            to="/import"
-            className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-600 transition-colors"
-          >
-            Zum Import
-          </Link>
-        </div>
+        <Card animate className="text-center">
+          <CardContent className="py-16">
+            <div className="flex justify-center mb-5">
+              <div className="w-16 h-16 rounded-2xl gradient-card-3 flex items-center justify-center shadow-[var(--shadow-glow)]">
+                <BarChart3 className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <p
+              className="text-lg font-semibold text-foreground mb-2"
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
+              Keine Controlling-Daten vorhanden
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Die Daten werden automatisch geladen, wenn Sie die Controlling.xlsx über die Import-Seite hochladen.
+            </p>
+            <Link to="/import">
+              <Button>
+                <Upload className="h-4 w-4 mr-2" />
+                Zum Import
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

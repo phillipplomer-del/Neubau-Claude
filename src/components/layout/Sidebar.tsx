@@ -117,7 +117,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                     href={item.path}
                     onClick={handleClick}
                     className={`flex items-center rounded-[var(--radius-chip)] text-sm font-medium transition-all duration-300 sidebar-icon-animate ${
-                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'
+                      collapsed ? 'justify-center p-1.5' : 'gap-2 px-2 py-1.5'
                     } ${
                       active
                         ? 'gradient-main text-white shadow-[var(--shadow-chip)]'

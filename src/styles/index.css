@@ -618,6 +618,23 @@
     background: linear-gradient(135deg, #E0BD00 0%, #9EE000 50%, #45F600 100%);
     color: #1A1A12;
   }
+
+  /* ============================================
+     TOGGLE SWITCH STYLES
+     ============================================ */
+
+  /* Screen reader only - for toggle switch hidden inputs */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
 }
 
 /* ============================================

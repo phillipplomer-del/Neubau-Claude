@@ -1,17 +1,12 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
 import StatCard from '@/components/ui/StatCard';
 import { useUserContext } from '@/contexts/UserContext';
-import { clearStore } from '@/lib/db';
-import { STORE_NAMES } from '@/types/database';
-import { Package, Factory, FolderKanban, Upload, Trash2, Clock, TrendingUp, AlertTriangle, Euro } from 'lucide-react';
+import { Package, Factory, FolderKanban, Clock, TrendingUp, AlertTriangle, Euro } from 'lucide-react';
 
 export default function Home() {
   const { user } = useUserContext();
-  const [clearing, setClearing] = useState(false);
-  const [clearSuccess, setClearSuccess] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -19,26 +14,6 @@ export default function Home() {
       setCurrentTime(new Date());
     }, 60000);
     return () => clearInterval(timer);
-  }, []);
-
-  const handleClearData = useCallback(async () => {
-    if (!window.confirm('Möchten Sie alle importierten Daten löschen?\n\nKommentare und Markierungen bleiben erhalten.')) {
-      return;
-    }
-
-    setClearing(true);
-    setClearSuccess(false);
-
-    try {
-      await clearStore(STORE_NAMES.SALES);
-      setClearSuccess(true);
-      setTimeout(() => setClearSuccess(false), 3000);
-    } catch (error) {
-      console.error('Fehler beim Löschen:', error);
-      alert('Fehler beim Löschen der Daten');
-    } finally {
-      setClearing(false);
-    }
   }, []);
 
   const formatDate = (date: Date) => {
@@ -128,10 +103,10 @@ export default function Home() {
       {/* Main Navigation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Sales Card */}
-        <Link to="/sales" className="block">
+        <Link to="/sales" className="block group">
           <Card animate className="h-full">
             <div className="p-6 flex flex-col items-center justify-center min-h-[200px]">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl gradient-card-1 mb-5 float-animate shadow-[var(--shadow-glow)]">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl gradient-card-1 mb-5 shadow-[var(--shadow-glow)] transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
                 <Package className="h-8 w-8 text-white" />
               </div>
               <h3
@@ -148,10 +123,10 @@ export default function Home() {
         </Link>
 
         {/* Production Card */}
-        <Link to="/production" className="block">
+        <Link to="/production" className="block group">
           <Card animate className="h-full">
             <div className="p-6 flex flex-col items-center justify-center min-h-[200px]">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl gradient-card-2 mb-5 float-animate shadow-[var(--shadow-glow)]">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl gradient-card-2 mb-5 shadow-[var(--shadow-glow)] transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
                 <Factory className="h-8 w-8 text-white" />
               </div>
               <h3
@@ -168,10 +143,10 @@ export default function Home() {
         </Link>
 
         {/* Projects Card */}
-        <Link to="/projects" className="block">
+        <Link to="/projects" className="block group">
           <Card animate className="h-full">
             <div className="p-6 flex flex-col items-center justify-center min-h-[200px]">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl gradient-card-3 mb-5 float-animate shadow-[var(--shadow-glow)]">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl gradient-card-3 mb-5 shadow-[var(--shadow-glow)] transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
                 <FolderKanban className="h-8 w-8 text-white" />
               </div>
               <h3
@@ -186,55 +161,6 @@ export default function Home() {
             </div>
           </Card>
         </Link>
-      </div>
-
-      {/* Bottom Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Import Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Daten importieren</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
-              Laden Sie Excel-Dateien von Sales, Produktion und Projektmanagement hoch
-            </p>
-            <Link to="/import">
-              <Button variant="primary" size="md">
-                <Upload className="h-4 w-4 mr-2" />
-                Zum Import
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        {/* Data Management Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Daten verwalten</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
-              Importierte Daten zurücksetzen. Kommentare und Markierungen bleiben erhalten.
-            </p>
-            <div className="flex items-center gap-4">
-              <Button
-                variant="danger"
-                size="md"
-                onClick={handleClearData}
-                disabled={clearing}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                {clearing ? 'Lösche...' : 'Daten löschen'}
-              </Button>
-              {clearSuccess && (
-                <span className="text-sm text-[var(--success)] font-medium">
-                  Erfolgreich gelöscht
-                </span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

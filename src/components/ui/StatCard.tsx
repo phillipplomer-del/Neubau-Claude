@@ -29,7 +29,7 @@ const StatCard = forwardRef<HTMLDivElement, StatCardProps>(
         <div className="flex items-center gap-4">
           {/* Icon Container */}
           <div
-            className={`w-10 h-10 rounded-xl flex items-center justify-center ${gradientClasses[gradient]} float-animate`}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center ${gradientClasses[gradient]}`}
           >
             <span className="text-white">{icon}</span>
           </div>
