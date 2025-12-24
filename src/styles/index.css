@@ -1,19 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme inline {
-  /* Font Family */
+  /* Font Families */
+  --font-display: 'Poppins', system-ui, -apple-system, sans-serif;
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Border Radius - keeping defaults, adding custom */
+  /* Border Radius - Aqua Design System */
+  --radius-card: 20px;
+  --radius-input: 18px;
+  --radius-chip: 14px;
+  --radius-bar: 8px;
+  --radius-pill: 999px;
   --radius-lg: 0.5rem;
   --radius-md: calc(0.5rem - 2px);
   --radius-sm: calc(0.5rem - 4px);
 
-  /* Custom semantic colors (extend, don't replace) */
+  /* Animation Timing */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 400ms;
+
+  /* Custom semantic colors */
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-muted: hsl(var(--card-muted));
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
   --color-primary: hsl(var(--primary));
@@ -29,11 +43,22 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+
+  /* Aqua Accent Colors */
+  --color-accent-mint: var(--accent-mint);
+  --color-accent-cyan: var(--accent-cyan);
+  --color-accent-teal: var(--accent-teal);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-aqua: var(--accent-aqua);
+
+  /* Chart colors */
   --color-chart-1: hsl(var(--chart-1));
   --color-chart-2: hsl(var(--chart-2));
   --color-chart-3: hsl(var(--chart-3));
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
+
+  /* Sidebar colors */
   --color-sidebar: hsl(var(--sidebar));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-primary: hsl(var(--sidebar-primary));
@@ -46,85 +71,573 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98.04%;
-    --foreground: 217.24 32.58% 17.45%;
-    --card: 0 0% 100%;
-    --card-foreground: 217.24 32.58% 17.45%;
+    /* Aqua Design System - Light Mode */
+    --background: 228 25% 97%;  /* #F6F7FB */
+    --foreground: 223 27% 15%;  /* #1F2430 */
+    --card: 0 0% 100%;          /* #FFFFFF */
+    --card-foreground: 223 27% 15%;
+    --card-muted: 228 18% 96%;  /* #F2F3F7 */
     --popover: 0 0% 100%;
-    --popover-foreground: 217.24 32.58% 17.45%;
-    --primary: 238.73 83.53% 66.67%;
+    --popover-foreground: 223 27% 15%;
+
+    /* Primary = Gradient (use accent-teal as base) */
+    --primary: 180 100% 44%;    /* #00DEE0 teal */
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 13.04% 90.98%;
-    --secondary-foreground: 216.92 19.12% 26.67%;
-    --muted: 220 14.29% 95.88%;
-    --muted-foreground: 220 8.94% 46.08%;
-    --accent: 226.45 100% 93.92%;
-    --accent-foreground: 216.92 19.12% 26.67%;
-    --destructive: 0 84.24% 60.20%;
+
+    --secondary: 228 18% 96%;
+    --secondary-foreground: 220 9% 46%;
+    --muted: 228 18% 96%;
+    --muted-foreground: 220 9% 46%;  /* #6B7280 */
+    --accent: 180 100% 44%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;   /* #F87171 */
     --destructive-foreground: 0 0% 100%;
-    --border: 216 12.20% 83.92%;
-    --input: 216 12.20% 83.92%;
-    --ring: 238.73 83.53% 66.67%;
-    --chart-1: 238.73 83.53% 66.67%;
-    --chart-2: 243.40 75.36% 58.63%;
-    --chart-3: 244.52 57.94% 50.59%;
-    --chart-4: 243.65 54.50% 41.37%;
-    --chart-5: 242.17 47.43% 34.31%;
-    --sidebar: 220 14.29% 95.88%;
-    --sidebar-foreground: 217.24 32.58% 17.45%;
-    --sidebar-primary: 238.73 83.53% 66.67%;
+
+    --border: 223 27% 15% / 0.08;
+    --input: 228 18% 96%;
+    --ring: 180 100% 44%;
+
+    /* Aqua Accent Colors - Light Mode */
+    --accent-mint: #00E097;
+    --accent-cyan: #0097E0;
+    --accent-teal: #00DEE0;
+    --accent-blue: #0050E0;
+    --accent-aqua: #4BDFE0;
+    --accent-green: #0ED44C;
+
+    /* State Colors */
+    --success: #00E097;
+    --warning: #E0BD00;
+    --danger: #F87171;
+    --info: #0097E0;
+
+    /* Chart Colors - Violet Gradient */
+    --chart-1: 263 70% 85%;     /* #C4B5FD */
+    --chart-2: 255 90% 72%;     /* #8B7CF6 */
+    --chart-3: 180 100% 44%;    /* teal */
+    --chart-4: 200 100% 44%;    /* cyan */
+    --chart-5: 160 100% 44%;    /* mint */
+
+    /* Shadows */
+    --shadow-card: 0 12px 30px rgba(35, 40, 70, 0.08);
+    --shadow-hover: 0 16px 36px rgba(35, 40, 70, 0.12);
+    --shadow-chip: 0 4px 10px rgba(35, 40, 70, 0.08);
+    --shadow-glow: 0 10px 25px rgba(0, 222, 224, 0.3);
+
+    /* Sidebar */
+    --sidebar: 228 18% 96%;
+    --sidebar-foreground: 223 27% 15%;
+    --sidebar-primary: 180 100% 44%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 226.45 100% 93.92%;
-    --sidebar-accent-foreground: 216.92 19.12% 26.67%;
-    --sidebar-border: 216 12.20% 83.92%;
-    --sidebar-ring: 238.73 83.53% 66.67%;
+    --sidebar-accent: 180 100% 44% / 0.1;
+    --sidebar-accent-foreground: 180 100% 35%;
+    --sidebar-border: 223 27% 15% / 0.08;
+    --sidebar-ring: 180 100% 44%;
+
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.22 47.37% 11.18%;
-    --foreground: 214.29 31.82% 91.37%;
-    --card: 217.24 32.58% 17.45%;
-    --card-foreground: 214.29 31.82% 91.37%;
-    --popover: 217.24 32.58% 17.45%;
-    --popover-foreground: 214.29 31.82% 91.37%;
-    --primary: 234.45 89.47% 73.92%;
-    --primary-foreground: 222.22 47.37% 11.18%;
-    --secondary: 217.78 23.08% 22.94%;
-    --secondary-foreground: 216 12.20% 83.92%;
-    --muted: 217.24 40.85% 13.92%;
-    --muted-foreground: 217.89 10.61% 64.90%;
-    --accent: 216.92 19.12% 26.67%;
-    --accent-foreground: 216 12.20% 83.92%;
-    --destructive: 0 84.24% 60.20%;
-    --destructive-foreground: 222.22 47.37% 11.18%;
-    --border: 215 13.79% 34.12%;
-    --input: 215 13.79% 34.12%;
-    --ring: 234.45 89.47% 73.92%;
-    --chart-1: 234.45 89.47% 73.92%;
-    --chart-2: 238.73 83.53% 66.67%;
-    --chart-3: 243.40 75.36% 58.63%;
-    --chart-4: 244.52 57.94% 50.59%;
-    --chart-5: 243.65 54.50% 41.37%;
-    --sidebar: 217.24 32.58% 17.45%;
-    --sidebar-foreground: 214.29 31.82% 91.37%;
-    --sidebar-primary: 234.45 89.47% 73.92%;
-    --sidebar-primary-foreground: 222.22 47.37% 11.18%;
-    --sidebar-accent: 216.92 19.12% 26.67%;
-    --sidebar-accent-foreground: 216 12.20% 83.92%;
-    --sidebar-border: 215 13.79% 34.12%;
-    --sidebar-ring: 234.45 89.47% 73.92%;
+    /* Aqua Design System - Dark Mode (Warm Tones) */
+    --background: 60 15% 9%;    /* #1A1A12 */
+    --foreground: 60 25% 97%;   /* #F8F8F0 */
+    --card: 60 17% 12%;         /* #252518 */
+    --card-foreground: 60 25% 97%;
+    --card-muted: 60 24% 16%;   /* #32321F */
+    --popover: 60 17% 12%;
+    --popover-foreground: 60 25% 97%;
+
+    /* Primary = Gold in dark mode */
+    --primary: 48 100% 44%;     /* #E0BD00 gold */
+    --primary-foreground: 60 15% 9%;
+
+    --secondary: 60 24% 16%;
+    --secondary-foreground: 60 24% 71%;  /* #C8C8A0 */
+    --muted: 60 24% 16%;
+    --muted-foreground: 60 24% 52%;      /* #989870 */
+    --accent: 48 100% 44%;
+    --accent-foreground: 60 15% 9%;
+
+    --destructive: 0 100% 71%;  /* #FF6B6B */
+    --destructive-foreground: 60 15% 9%;
+
+    --border: 60 25% 97% / 0.1;
+    --input: 60 24% 16%;
+    --ring: 48 100% 44%;
+
+    /* Aqua Accent Colors - Dark Mode (Warm) */
+    --accent-mint: #E0BD00;     /* gold replaces mint */
+    --accent-cyan: #E0D900;     /* yellow replaces cyan */
+    --accent-teal: #9EE000;     /* lime replaces teal */
+    --accent-blue: #45F600;     /* green replaces blue */
+    --accent-aqua: #E0DB4B;     /* lemon replaces aqua */
+    --accent-green: #45F600;
+
+    /* State Colors - Dark Mode */
+    --success: #45F600;
+    --warning: #E0BD00;
+    --danger: #FF6B6B;
+    --info: #9EE000;
+
+    /* Chart Colors - Yellow/Lime Gradient */
+    --chart-1: 58 70% 58%;      /* #E0DB4B lemon */
+    --chart-2: 72 100% 44%;     /* #9EE000 lime */
+    --chart-3: 48 100% 44%;     /* gold */
+    --chart-4: 44 100% 44%;     /* orange */
+    --chart-5: 90 100% 48%;     /* green */
+
+    /* Shadows - Dark Mode */
+    --shadow-card: 0 12px 30px rgba(0, 0, 0, 0.4);
+    --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.5);
+    --shadow-chip: 0 4px 10px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 10px 25px rgba(158, 224, 0, 0.3);
+
+    /* Sidebar - Dark Mode */
+    --sidebar: 60 17% 12%;
+    --sidebar-foreground: 60 25% 97%;
+    --sidebar-primary: 48 100% 44%;
+    --sidebar-primary-foreground: 60 15% 9%;
+    --sidebar-accent: 48 100% 44% / 0.1;
+    --sidebar-accent-foreground: 48 100% 50%;
+    --sidebar-border: 60 25% 97% / 0.1;
+    --sidebar-ring: 48 100% 44%;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
   }
 
   html, body, #root {
     @apply h-full;
   }
+
+  /* Heading styles with Poppins */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
 }
 
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: var(--shadow-glow);
+  }
+  50% {
+    box-shadow: 0 10px 35px rgba(0, 222, 224, 0.5);
+  }
+}
+
+/* ============================================
+   GRADIENT CLASSES
+   ============================================ */
+
 @layer components {
-  /* Custom component styles can go here */
+  /* Main Gradient - Light Mode: Mint → Teal → Blue */
+  .gradient-main {
+    background: linear-gradient(135deg, #00E097 0%, #00DEE0 50%, #0050E0 100%);
+  }
+
+  .dark .gradient-main {
+    background: linear-gradient(135deg, #E0BD00 0%, #9EE000 50%, #45F600 100%);
+  }
+
+  /* Card Gradients */
+  .gradient-card-1 {
+    background: linear-gradient(135deg, #00E097 0%, #00DEE0 100%);
+  }
+  .dark .gradient-card-1 {
+    background: linear-gradient(135deg, #E0BD00 0%, #E0D900 100%);
+  }
+
+  .gradient-card-2 {
+    background: linear-gradient(135deg, #00DEE0 0%, #0050E0 100%);
+  }
+  .dark .gradient-card-2 {
+    background: linear-gradient(135deg, #E0D900 0%, #9EE000 100%);
+  }
+
+  .gradient-card-3 {
+    background: linear-gradient(135deg, #0097E0 0%, #00E097 100%);
+  }
+  .dark .gradient-card-3 {
+    background: linear-gradient(135deg, #9EE000 0%, #45F600 100%);
+  }
+
+  .gradient-card-4 {
+    background: linear-gradient(135deg, #4BDFE0 0%, #0097E0 100%);
+  }
+  .dark .gradient-card-4 {
+    background: linear-gradient(135deg, #E0A200 0%, #E0BD00 100%);
+  }
+
+  /* Bar Chart Gradient */
+  .gradient-bar {
+    background: linear-gradient(180deg, #C4B5FD 0%, #8B7CF6 100%);
+  }
+  .dark .gradient-bar {
+    background: linear-gradient(180deg, #E0DB4B 0%, #9EE000 100%);
+  }
+
+  /* Gradient Text */
+  .gradient-text {
+    background: linear-gradient(135deg, #00E097 0%, #00DEE0 50%, #0050E0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .dark .gradient-text {
+    background: linear-gradient(135deg, #E0BD00 0%, #9EE000 50%, #45F600 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ============================================
+     ANIMATION UTILITY CLASSES
+     ============================================ */
+
+  /* Button Animation */
+  .btn-animate {
+    position: relative;
+    overflow: hidden;
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+
+  .btn-animate::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    transform: translateX(-100%);
+  }
+
+  .btn-animate:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: var(--shadow-glow);
+  }
+
+  .btn-animate:hover::before {
+    animation: shimmer 0.6s ease-out;
+  }
+
+  /* Card Animation */
+  .card-animate {
+    transition: all var(--duration-slow) var(--ease-smooth);
+  }
+
+  .card-animate:hover {
+    transform: translateY(-8px) scale(1.01);
+    box-shadow: var(--shadow-hover);
+  }
+
+  /* Chip Animation */
+  .chip-animate {
+    transition: all 250ms var(--ease-smooth);
+  }
+
+  .chip-animate:hover {
+    transform: translateY(-3px) scale(1.05);
+  }
+
+  /* Icon Button Animation */
+  .icon-btn-animate {
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+
+  .icon-btn-animate:hover {
+    transform: scale(1.15) rotate(5deg);
+    box-shadow: 0 8px 20px rgba(0, 222, 224, 0.25);
+  }
+
+  .dark .icon-btn-animate:hover {
+    box-shadow: 0 8px 20px rgba(158, 224, 0, 0.25);
+  }
+
+  /* Stat Card Animation */
+  .stat-card-animate {
+    transition: all var(--duration-slow) var(--ease-smooth);
+  }
+
+  .stat-card-animate:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 222, 224, 0.25);
+  }
+
+  .dark .stat-card-animate:hover {
+    box-shadow: 0 20px 40px rgba(158, 224, 0, 0.25);
+  }
+
+  /* List Item Animation */
+  .list-item-animate {
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+
+  .list-item-animate:hover {
+    transform: translateX(8px);
+    background-color: hsl(var(--card-muted));
+  }
+
+  /* Progress Bar Animation */
+  .progress-animate {
+    transition: transform var(--duration-normal) var(--ease-smooth);
+  }
+
+  .progress-animate:hover {
+    transform: scaleY(1.5);
+  }
+
+  /* Avatar Animation */
+  .avatar-animate {
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+
+  .avatar-animate:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(0, 222, 224, 0.3);
+  }
+
+  .dark .avatar-animate:hover {
+    box-shadow: 0 8px 25px rgba(158, 224, 0, 0.3);
+  }
+
+  /* Clickable Text with Gradient Underline */
+  .clickable-text {
+    position: relative;
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+
+  .clickable-text::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #00E097, #00DEE0, #0050E0);
+    transition: width var(--duration-normal) var(--ease-smooth);
+  }
+
+  .dark .clickable-text::after {
+    background: linear-gradient(90deg, #E0BD00, #9EE000, #45F600);
+  }
+
+  .clickable-text:hover {
+    transform: translateX(4px);
+  }
+
+  .clickable-text:hover::after {
+    width: 100%;
+  }
+
+  /* Float Animation */
+  .float-animate {
+    animation: float 2s ease-in-out infinite;
+  }
+
+  /* Glow Animation */
+  .glow-animate {
+    transition: filter var(--duration-normal) var(--ease-smooth);
+  }
+
+  .glow-animate:hover {
+    filter: drop-shadow(0 0 8px rgba(0, 222, 224, 0.5));
+  }
+
+  .dark .glow-animate:hover {
+    filter: drop-shadow(0 0 8px rgba(158, 224, 0, 0.5));
+  }
+
+  /* Bar Chart Animation */
+  .bar-animate {
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+
+  .bar-animate:hover {
+    transform: scaleY(1.05);
+    filter: brightness(1.1);
+  }
+
+  /* Gradient Shift Animation */
+  .gradient-shift {
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+  }
+
+  /* Sidebar Icon Animation */
+  .sidebar-icon-animate {
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+
+  .sidebar-icon-animate:hover {
+    transform: scale(1.1);
+  }
+
+  .sidebar-icon-animate.active {
+    transform: scale(1.05);
+  }
+
+  /* ============================================
+     CUSTOM COMPONENT STYLES
+     ============================================ */
+
+  /* Card with Aqua styling */
+  .aqua-card {
+    background: hsl(var(--card));
+    border-radius: var(--radius-card);
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Chip styling */
+  .aqua-chip {
+    background: hsl(var(--card));
+    border-radius: var(--radius-chip);
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: var(--shadow-chip);
+  }
+
+  .aqua-chip.active {
+    background: linear-gradient(135deg, #00E097 0%, #00DEE0 50%, #0050E0 100%);
+    color: white;
+  }
+
+  .dark .aqua-chip.active {
+    background: linear-gradient(135deg, #E0BD00 0%, #9EE000 50%, #45F600 100%);
+    color: #1A1A12;
+  }
+
+  /* Input styling */
+  .aqua-input {
+    background: hsl(var(--card-muted));
+    border-radius: var(--radius-input);
+    padding: 12px 16px;
+    border: none;
+    outline: none;
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+
+  .aqua-input:focus {
+    box-shadow: 0 0 0 2px rgba(0, 222, 224, 0.5);
+  }
+
+  .dark .aqua-input:focus {
+    box-shadow: 0 0 0 2px rgba(158, 224, 0, 0.5);
+  }
+
+  /* Primary Button */
+  .aqua-btn-primary {
+    background: linear-gradient(135deg, #00E097 0%, #00DEE0 50%, #0050E0 100%);
+    color: white;
+    border-radius: var(--radius-pill);
+    padding: 12px 24px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+  }
+
+  .dark .aqua-btn-primary {
+    background: linear-gradient(135deg, #E0BD00 0%, #9EE000 50%, #45F600 100%);
+    color: #1A1A12;
+  }
+
+  /* Progress Bar */
+  .aqua-progress-track {
+    background: hsl(var(--card-muted));
+    height: 6px;
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+  }
+
+  .aqua-progress-fill {
+    height: 100%;
+    border-radius: var(--radius-pill);
+    transition: width 500ms var(--ease-smooth);
+  }
+
+  /* Badge */
+  .aqua-badge {
+    background: linear-gradient(135deg, #00E097 0%, #00DEE0 50%, #0050E0 100%);
+    color: white;
+    min-width: 20px;
+    height: 20px;
+    border-radius: var(--radius-pill);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 0 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .dark .aqua-badge {
+    background: linear-gradient(135deg, #E0BD00 0%, #9EE000 50%, #45F600 100%);
+    color: #1A1A12;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION SUPPORT
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .float-animate {
+    animation: none;
+  }
+
+  .gradient-shift {
+    animation: none;
+  }
 }

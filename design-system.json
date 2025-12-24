@@ -1,0 +1,1074 @@
+{
+  "meta": {
+    "name": "Aqua Design System",
+    "version": "1.0.0",
+    "description": "A modern, gradient-focused design system with dual-theme support (light/dark) featuring smooth animations and accessible color contrasts.",
+    "lastUpdated": "2024-12-24",
+    "frameworks": ["React", "Tailwind CSS 4", "Vite"]
+  },
+
+  "designPrinciples": {
+    "overview": "This design system prioritizes visual harmony through gradient-based accents, smooth micro-interactions, and a cohesive color palette that adapts between light and dark modes.",
+    "principles": [
+      {
+        "name": "Gradient-First",
+        "description": "Use gradients as primary visual elements for emphasis, progress indicators, and interactive states. Solid colors serve as secondary accents."
+      },
+      {
+        "name": "Smooth Motion",
+        "description": "All interactive elements should have smooth transitions using cubic-bezier(0.4, 0, 0.2, 1) timing. Animations should feel natural and not jarring."
+      },
+      {
+        "name": "Dual-Theme Harmony",
+        "description": "Light and dark modes use complementary but distinct color palettes. Light mode uses cool tones (mint/cyan/blue), dark mode uses warm tones (gold/lime/green)."
+      },
+      {
+        "name": "Subtle Depth",
+        "description": "Use soft shadows and elevation changes on hover to create depth without harsh contrasts. Cards should feel like they float above the surface."
+      },
+      {
+        "name": "Progressive Disclosure",
+        "description": "Interactive elements reveal additional visual feedback on hover/focus. Text underlines animate in, buttons lift, cards elevate."
+      }
+    ]
+  },
+
+  "colors": {
+    "lightMode": {
+      "surface": {
+        "page": {
+          "value": "#F6F7FB",
+          "usage": "Main background color for the entire application"
+        },
+        "card": {
+          "value": "#FFFFFF",
+          "usage": "Background for cards, modals, and elevated surfaces"
+        },
+        "cardMuted": {
+          "value": "#F2F3F7",
+          "usage": "Secondary card backgrounds, input backgrounds, nested containers"
+        },
+        "chip": {
+          "value": "#FFFFFF",
+          "usage": "Background for chips and tags"
+        }
+      },
+      "text": {
+        "primary": {
+          "value": "#1F2430",
+          "usage": "Main text, headings, important content"
+        },
+        "secondary": {
+          "value": "#6B7280",
+          "usage": "Supporting text, descriptions, labels"
+        },
+        "muted": {
+          "value": "#9CA3AF",
+          "usage": "Placeholder text, disabled states, subtle labels"
+        },
+        "inverse": {
+          "value": "#FFFFFF",
+          "usage": "Text on dark/gradient backgrounds"
+        }
+      },
+      "accent": {
+        "mint": {
+          "value": "#00E097",
+          "usage": "Primary accent, success states, positive indicators"
+        },
+        "cyan": {
+          "value": "#0097E0",
+          "usage": "Information, links, secondary actions"
+        },
+        "teal": {
+          "value": "#00DEE0",
+          "usage": "Highlights, gradient midpoints, decorative elements"
+        },
+        "blue": {
+          "value": "#0050E0",
+          "usage": "Primary actions, important buttons, gradient endpoints"
+        },
+        "aqua": {
+          "value": "#4BDFE0",
+          "usage": "Soft accents, alternative highlights"
+        },
+        "green": {
+          "value": "#0ED44C",
+          "usage": "Success confirmations, completion indicators"
+        }
+      },
+      "state": {
+        "success": {
+          "value": "#00E097",
+          "usage": "Success messages, completed tasks, positive feedback"
+        },
+        "warning": {
+          "value": "#E0BD00",
+          "usage": "Warnings, pending states, attention required"
+        },
+        "danger": {
+          "value": "#F87171",
+          "usage": "Errors, destructive actions, critical alerts"
+        },
+        "info": {
+          "value": "#0097E0",
+          "usage": "Informational messages, tips, neutral notifications"
+        }
+      },
+      "chart": {
+        "bar": {
+          "start": "#C4B5FD",
+          "end": "#8B7CF6",
+          "usage": "Bar chart gradient (violet/purple theme)"
+        }
+      },
+      "border": {
+        "subtle": {
+          "value": "rgba(31, 36, 48, 0.08)",
+          "usage": "Subtle borders, dividers, separators"
+        }
+      }
+    },
+    "darkMode": {
+      "surface": {
+        "page": {
+          "value": "#1A1A12",
+          "usage": "Main background - warm dark with slight olive tint"
+        },
+        "card": {
+          "value": "#252518",
+          "usage": "Card backgrounds - slightly elevated from page"
+        },
+        "cardMuted": {
+          "value": "#32321F",
+          "usage": "Secondary surfaces, input backgrounds"
+        },
+        "chip": {
+          "value": "#32321F",
+          "usage": "Chip backgrounds in dark mode"
+        }
+      },
+      "text": {
+        "primary": {
+          "value": "#F8F8F0",
+          "usage": "Main text - warm white"
+        },
+        "secondary": {
+          "value": "#C8C8A0",
+          "usage": "Supporting text - muted warm tone"
+        },
+        "muted": {
+          "value": "#989870",
+          "usage": "Placeholder, disabled text"
+        },
+        "inverse": {
+          "value": "#1A1A12",
+          "usage": "Text on light/gradient backgrounds"
+        }
+      },
+      "accent": {
+        "gold": {
+          "value": "#E0BD00",
+          "usage": "Primary accent in dark mode"
+        },
+        "lime": {
+          "value": "#9EE000",
+          "usage": "Secondary accent, highlights"
+        },
+        "yellow": {
+          "value": "#E0D900",
+          "usage": "Bright highlights, attention grabbers"
+        },
+        "orange": {
+          "value": "#E0A200",
+          "usage": "Warm accents, alternative highlights"
+        },
+        "green": {
+          "value": "#45F600",
+          "usage": "Success states, completion indicators"
+        },
+        "lemon": {
+          "value": "#E0DB4B",
+          "usage": "Soft yellow accents, decorative elements"
+        }
+      },
+      "state": {
+        "success": {
+          "value": "#45F600",
+          "usage": "Success in dark mode - bright green"
+        },
+        "warning": {
+          "value": "#E0BD00",
+          "usage": "Warning in dark mode - gold"
+        },
+        "danger": {
+          "value": "#FF6B6B",
+          "usage": "Error in dark mode - coral red"
+        },
+        "info": {
+          "value": "#9EE000",
+          "usage": "Info in dark mode - lime"
+        }
+      },
+      "chart": {
+        "bar": {
+          "start": "#E0DB4B",
+          "end": "#9EE000",
+          "usage": "Bar chart gradient in dark mode (yellow to lime)"
+        }
+      },
+      "border": {
+        "subtle": {
+          "value": "rgba(248, 248, 240, 0.1)",
+          "usage": "Subtle borders in dark mode"
+        }
+      }
+    }
+  },
+
+  "gradients": {
+    "lightMode": {
+      "main": {
+        "css": "linear-gradient(135deg, #00E097 0%, #00DEE0 50%, #0050E0 100%)",
+        "tailwind": "bg-gradient-to-br from-accent-mint via-accent-teal to-accent-blue",
+        "usage": "Primary gradient for important elements, hero sections"
+      },
+      "card1": {
+        "css": "linear-gradient(135deg, #00E097 0%, #00DEE0 100%)",
+        "usage": "Card accent gradient - mint to teal"
+      },
+      "card2": {
+        "css": "linear-gradient(135deg, #00DEE0 0%, #0050E0 100%)",
+        "usage": "Card accent gradient - teal to blue"
+      },
+      "card3": {
+        "css": "linear-gradient(135deg, #0097E0 0%, #00E097 100%)",
+        "usage": "Card accent gradient - cyan to mint"
+      },
+      "card4": {
+        "css": "linear-gradient(135deg, #4BDFE0 0%, #0097E0 100%)",
+        "usage": "Card accent gradient - aqua to cyan"
+      },
+      "bar": {
+        "css": "linear-gradient(180deg, #C4B5FD 0%, #8B7CF6 100%)",
+        "usage": "Bar chart gradient - vertical violet"
+      },
+      "text": {
+        "css": "linear-gradient(135deg, #00E097 0%, #00DEE0 50%, #0050E0 100%)",
+        "additionalCSS": "-webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;",
+        "usage": "Gradient text effect for headings"
+      }
+    },
+    "darkMode": {
+      "main": {
+        "css": "linear-gradient(135deg, #E0BD00 0%, #9EE000 50%, #45F600 100%)",
+        "usage": "Primary gradient - gold to lime to green"
+      },
+      "card1": {
+        "css": "linear-gradient(135deg, #E0BD00 0%, #E0D900 100%)",
+        "usage": "Card gradient - gold to yellow"
+      },
+      "card2": {
+        "css": "linear-gradient(135deg, #E0D900 0%, #9EE000 100%)",
+        "usage": "Card gradient - yellow to lime"
+      },
+      "card3": {
+        "css": "linear-gradient(135deg, #9EE000 0%, #45F600 100%)",
+        "usage": "Card gradient - lime to green"
+      },
+      "card4": {
+        "css": "linear-gradient(135deg, #E0A200 0%, #E0BD00 100%)",
+        "usage": "Card gradient - orange to gold"
+      },
+      "bar": {
+        "css": "linear-gradient(180deg, #E0DB4B 0%, #9EE000 100%)",
+        "usage": "Bar chart gradient - lemon to lime"
+      },
+      "text": {
+        "css": "linear-gradient(135deg, #E0BD00 0%, #9EE000 50%, #45F600 100%)",
+        "usage": "Gradient text in dark mode"
+      }
+    }
+  },
+
+  "typography": {
+    "fontFamilies": {
+      "display": {
+        "value": "'Poppins', sans-serif",
+        "weights": [400, 500, 600, 700],
+        "usage": "Headings, titles, display text"
+      },
+      "body": {
+        "value": "'Inter', sans-serif",
+        "weights": [400, 500, 600, 700],
+        "usage": "Body text, UI elements, labels"
+      }
+    },
+    "fontSizes": {
+      "h1": {
+        "size": "26px",
+        "lineHeight": "1.2",
+        "usage": "Page titles, hero headings"
+      },
+      "h2": {
+        "size": "20px",
+        "lineHeight": "1.3",
+        "usage": "Section headings, card titles"
+      },
+      "h3": {
+        "size": "16px",
+        "lineHeight": "1.4",
+        "usage": "Subsection headings, list titles"
+      },
+      "body": {
+        "size": "14px",
+        "lineHeight": "1.45",
+        "usage": "Main body text, descriptions"
+      },
+      "caption": {
+        "size": "12px",
+        "lineHeight": "1.4",
+        "usage": "Labels, helper text, metadata"
+      },
+      "micro": {
+        "size": "10px",
+        "lineHeight": "1.3",
+        "usage": "Badges, tiny labels, timestamps"
+      }
+    },
+    "fontWeights": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    }
+  },
+
+  "spacing": {
+    "scale": {
+      "0": "0px",
+      "1": "4px",
+      "2": "8px",
+      "3": "12px",
+      "4": "16px",
+      "5": "20px",
+      "6": "24px",
+      "7": "28px",
+      "8": "32px",
+      "10": "40px",
+      "12": "48px",
+      "16": "64px"
+    },
+    "guidelines": {
+      "cardPadding": "24px (p-6)",
+      "sectionGap": "28px (gap-7)",
+      "elementGap": "16px (gap-4)",
+      "inlineGap": "8px-12px (gap-2 to gap-3)",
+      "pageMargin": "24px (p-6)"
+    }
+  },
+
+  "borderRadius": {
+    "card": {
+      "value": "20px",
+      "tailwind": "rounded-card",
+      "usage": "Cards, modals, large containers"
+    },
+    "input": {
+      "value": "18px",
+      "tailwind": "rounded-input",
+      "usage": "Input fields, text areas, search boxes"
+    },
+    "chip": {
+      "value": "14px",
+      "tailwind": "rounded-chip",
+      "usage": "Chips, tags, small labels"
+    },
+    "bar": {
+      "value": "8px",
+      "tailwind": "rounded-lg",
+      "usage": "Progress bars, chart bars"
+    },
+    "pill": {
+      "value": "999px",
+      "tailwind": "rounded-full",
+      "usage": "Pills, badges, avatars"
+    }
+  },
+
+  "shadows": {
+    "lightMode": {
+      "card": {
+        "value": "0 12px 30px rgba(35, 40, 70, 0.08)",
+        "usage": "Default card shadow"
+      },
+      "hover": {
+        "value": "0 16px 36px rgba(35, 40, 70, 0.12)",
+        "usage": "Elevated/hover state shadow"
+      },
+      "chip": {
+        "value": "0 4px 10px rgba(35, 40, 70, 0.08)",
+        "usage": "Small elements like chips, icon buttons"
+      },
+      "glow": {
+        "mint": "0 10px 25px rgba(0, 222, 224, 0.3)",
+        "usage": "Glow effect for accent elements"
+      }
+    },
+    "darkMode": {
+      "card": {
+        "value": "0 12px 30px rgba(0, 0, 0, 0.4)",
+        "usage": "Card shadow in dark mode"
+      },
+      "hover": {
+        "value": "0 20px 40px rgba(0, 0, 0, 0.5)",
+        "usage": "Hover shadow in dark mode"
+      },
+      "chip": {
+        "value": "0 4px 10px rgba(0, 0, 0, 0.3)",
+        "usage": "Small element shadows"
+      },
+      "glow": {
+        "lime": "0 10px 25px rgba(158, 224, 0, 0.3)",
+        "usage": "Glow effect in dark mode"
+      }
+    }
+  },
+
+  "animations": {
+    "timing": {
+      "default": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "description": "Standard easing for all transitions - smooth acceleration and deceleration"
+    },
+    "durations": {
+      "fast": "150ms",
+      "normal": "300ms",
+      "slow": "400ms",
+      "verySlow": "500ms"
+    },
+    "effects": {
+      "buttonHover": {
+        "transform": "translateY(-2px) scale(1.02)",
+        "shadow": "0 10px 25px rgba(0, 222, 224, 0.3)",
+        "additional": "Shimmer overlay animation from left to right",
+        "class": "btn-animate"
+      },
+      "cardHover": {
+        "transform": "translateY(-8px) scale(1.01)",
+        "duration": "400ms",
+        "class": "card-animate"
+      },
+      "iconButtonHover": {
+        "transform": "scale(1.15) rotate(5deg)",
+        "shadow": "0 8px 20px rgba(0, 222, 224, 0.25)",
+        "class": "icon-btn-animate"
+      },
+      "chipHover": {
+        "transform": "translateY(-3px) scale(1.05)",
+        "duration": "250ms",
+        "class": "chip-animate"
+      },
+      "statCardHover": {
+        "transform": "translateY(-6px) scale(1.02)",
+        "shadow": "0 20px 40px rgba(0, 222, 224, 0.25)",
+        "class": "stat-card-animate"
+      },
+      "listItemHover": {
+        "transform": "translateX(8px)",
+        "background": "surface-card-muted",
+        "class": "list-item-animate"
+      },
+      "progressBarHover": {
+        "transform": "scaleY(1.5)",
+        "class": "progress-animate"
+      },
+      "avatarHover": {
+        "transform": "scale(1.1)",
+        "shadow": "0 8px 25px rgba(0, 222, 224, 0.3)",
+        "class": "avatar-animate"
+      },
+      "clickableText": {
+        "description": "Gradient underline animates from 0 to 100% width, text shifts 4px right",
+        "underlineGradient": "linear-gradient(90deg, #00E097, #00DEE0, #0050E0)",
+        "darkModeGradient": "linear-gradient(90deg, #E0BD00, #9EE000, #45F600)",
+        "class": "clickable-text"
+      },
+      "gradientShift": {
+        "description": "Background position animates for gradient movement effect",
+        "keyframes": "0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; }",
+        "duration": "3s infinite",
+        "class": "gradient-shift"
+      },
+      "glowOnHover": {
+        "filter": "drop-shadow(0 0 8px rgba(0, 222, 224, 0.5))",
+        "darkModeFilter": "drop-shadow(0 0 8px rgba(158, 224, 0, 0.5))",
+        "class": "glow-animate"
+      },
+      "barChartHover": {
+        "transform": "scaleY(1.05)",
+        "filter": "brightness(1.1)",
+        "class": "bar-animate"
+      },
+      "float": {
+        "keyframes": "0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); }",
+        "duration": "2s ease-in-out infinite",
+        "class": "float-animate"
+      }
+    }
+  },
+
+  "components": {
+    "Button": {
+      "description": "Primary interactive element for user actions",
+      "variants": {
+        "primary": {
+          "background": "gradient-main",
+          "textColor": "text-inverse",
+          "padding": "12px 24px",
+          "borderRadius": "rounded-pill (999px)",
+          "fontWeight": "600",
+          "fontSize": "body (14px)",
+          "animation": "btn-animate with shimmer effect",
+          "hover": {
+            "transform": "translateY(-2px) scale(1.02)",
+            "shadow": "0 10px 25px rgba(0, 222, 224, 0.3)"
+          }
+        },
+        "secondary": {
+          "background": "surface-card",
+          "textColor": "text-primary",
+          "border": "1px solid border-subtle",
+          "padding": "12px 24px",
+          "borderRadius": "rounded-pill",
+          "hover": {
+            "background": "surface-card-muted"
+          }
+        },
+        "ghost": {
+          "background": "transparent",
+          "textColor": "text-secondary",
+          "padding": "12px 24px",
+          "hover": {
+            "background": "surface-card-muted",
+            "textColor": "text-primary"
+          }
+        }
+      },
+      "withIcon": {
+        "iconSize": "16px",
+        "gap": "8px",
+        "iconPosition": "left"
+      }
+    },
+
+    "Card": {
+      "description": "Container for grouping related content",
+      "default": {
+        "background": "surface-card",
+        "borderRadius": "20px",
+        "padding": "24px",
+        "shadow": "shadow-card",
+        "animation": "card-animate"
+      },
+      "hover": {
+        "transform": "translateY(-8px) scale(1.01)",
+        "shadow": "shadow-hover"
+      },
+      "variants": {
+        "elevated": {
+          "shadow": "shadow-hover"
+        },
+        "muted": {
+          "background": "surface-card-muted"
+        }
+      }
+    },
+
+    "CardHeader": {
+      "description": "Header section for cards with title and optional action",
+      "layout": "flex justify-between items-center",
+      "marginBottom": "16px",
+      "title": {
+        "fontSize": "h3 (16px)",
+        "fontWeight": "600",
+        "fontFamily": "display (Poppins)",
+        "color": "text-primary"
+      },
+      "action": {
+        "description": "Right-aligned slot for buttons, chips, or icons"
+      }
+    },
+
+    "Chip": {
+      "description": "Small interactive labels for filtering or categorization",
+      "default": {
+        "background": "surface-chip",
+        "textColor": "text-secondary",
+        "padding": "8px 16px",
+        "borderRadius": "14px",
+        "fontSize": "caption (12px)",
+        "fontWeight": "500",
+        "shadow": "shadow-chip",
+        "animation": "chip-animate"
+      },
+      "active": {
+        "background": "gradient-main",
+        "textColor": "text-inverse"
+      },
+      "hover": {
+        "transform": "translateY(-3px) scale(1.05)"
+      }
+    },
+
+    "Badge": {
+      "description": "Notification counter or status indicator",
+      "default": {
+        "background": "gradient-main",
+        "textColor": "text-inverse",
+        "minWidth": "20px",
+        "height": "20px",
+        "borderRadius": "pill (999px)",
+        "fontSize": "micro (10px)",
+        "fontWeight": "600",
+        "padding": "0 6px"
+      }
+    },
+
+    "ProgressBar": {
+      "description": "Visual indicator of progress or completion",
+      "track": {
+        "background": "surface-card-muted",
+        "height": "6px",
+        "borderRadius": "pill"
+      },
+      "fill": {
+        "borderRadius": "pill",
+        "transition": "width 500ms cubic-bezier(0.4, 0, 0.2, 1)"
+      },
+      "colors": {
+        "gradient": "from-accent-mint via-accent-teal to-accent-blue",
+        "mint": "accent-mint",
+        "teal": "accent-teal",
+        "cyan": "accent-cyan",
+        "blue": "accent-blue",
+        "aqua": "accent-aqua"
+      },
+      "animation": "progress-animate (scaleY 1.5 on hover)"
+    },
+
+    "Avatar": {
+      "description": "User profile image display",
+      "sizes": {
+        "small": "32px",
+        "medium": "48px",
+        "large": "64px"
+      },
+      "default": {
+        "borderRadius": "pill (50%)",
+        "objectFit": "cover",
+        "animation": "avatar-animate"
+      },
+      "withRing": {
+        "border": "3px solid",
+        "borderColor": "gradient (mint to teal)"
+      },
+      "hover": {
+        "transform": "scale(1.1)",
+        "shadow": "0 8px 25px rgba(0, 222, 224, 0.3)"
+      }
+    },
+
+    "IconButton": {
+      "description": "Circular button containing only an icon",
+      "sizes": {
+        "small": "28px",
+        "medium": "36px",
+        "large": "44px"
+      },
+      "default": {
+        "background": "surface-card-muted",
+        "borderRadius": "pill",
+        "iconColor": "text-secondary",
+        "animation": "icon-btn-animate"
+      },
+      "hover": {
+        "transform": "scale(1.15) rotate(5deg)",
+        "shadow": "0 8px 20px rgba(0, 222, 224, 0.25)"
+      }
+    },
+
+    "StatCard": {
+      "description": "Display key metrics with gradient accent",
+      "layout": {
+        "direction": "row",
+        "alignment": "center",
+        "gap": "16px"
+      },
+      "iconContainer": {
+        "size": "40px",
+        "borderRadius": "12px",
+        "background": "gradient (varies by card)",
+        "iconColor": "text-primary"
+      },
+      "value": {
+        "fontSize": "h2 (20px)",
+        "fontWeight": "700",
+        "fontFamily": "display",
+        "color": "text-primary"
+      },
+      "label": {
+        "fontSize": "caption (12px)",
+        "color": "text-secondary"
+      },
+      "animation": "stat-card-animate with float-animate on icon",
+      "hover": {
+        "transform": "translateY(-6px) scale(1.02)",
+        "shadow": "0 20px 40px rgba(0, 222, 224, 0.25)"
+      }
+    },
+
+    "MeetingList": {
+      "description": "List of scheduled meetings with time indicators",
+      "itemLayout": {
+        "direction": "row",
+        "gap": "12px",
+        "padding": "8px",
+        "borderRadius": "input (18px)"
+      },
+      "timeIndicator": {
+        "width": "4px",
+        "borderRadius": "pill",
+        "background": "accent color (varies)"
+      },
+      "time": {
+        "fontSize": "caption",
+        "fontWeight": "600",
+        "color": "text-primary"
+      },
+      "title": {
+        "fontSize": "body",
+        "fontWeight": "500",
+        "color": "text-primary",
+        "animation": "clickable-text"
+      },
+      "participants": {
+        "fontSize": "caption",
+        "color": "text-muted"
+      },
+      "itemAnimation": "list-item-animate"
+    },
+
+    "TrackerCard": {
+      "description": "Project progress tracker with icons",
+      "layout": {
+        "height": "64px",
+        "padding": "0 16px",
+        "borderRadius": "input (18px)",
+        "background": "surface-card-muted",
+        "alignment": "center"
+      },
+      "iconStack": {
+        "overlap": "-8px (negative margin)",
+        "iconSize": "32px",
+        "iconBackground": "surface-card",
+        "iconShadow": "shadow-chip"
+      },
+      "title": {
+        "fontSize": "body",
+        "fontWeight": "500",
+        "animation": "clickable-text"
+      },
+      "percentage": {
+        "fontSize": "caption",
+        "fontWeight": "600"
+      },
+      "animation": "list-item-animate"
+    },
+
+    "LineChart": {
+      "description": "SVG-based line chart with gradient fill",
+      "dimensions": {
+        "height": "160px",
+        "viewBox": "0 0 100 100"
+      },
+      "line": {
+        "strokeWidth": "2px",
+        "strokeLinecap": "round",
+        "strokeLinejoin": "round",
+        "gradient": "lineGradient (mint → teal → blue)"
+      },
+      "area": {
+        "gradient": "areaGradient (teal with 0.3 → 0 opacity)"
+      },
+      "dots": {
+        "radius": "4px",
+        "colors": "cycle through accent colors",
+        "shadow": "drop-shadow(0 2px 4px rgba(0,0,0,0.2))"
+      },
+      "grid": {
+        "type": "dots",
+        "color": "text-muted at 20% opacity"
+      },
+      "labels": {
+        "fontSize": "caption",
+        "color": "text-muted",
+        "animation": "clickable-text"
+      },
+      "darkModeColors": {
+        "gradient": "gold → lime → green"
+      }
+    },
+
+    "BarChart": {
+      "description": "Vertical bar chart with gradient bars",
+      "dimensions": {
+        "height": "128px",
+        "barGap": "12px"
+      },
+      "bar": {
+        "borderRadius": "8px",
+        "gradient": "gradient-bar (violet: #C4B5FD → #8B7CF6)",
+        "animation": "bar-animate"
+      },
+      "hover": {
+        "transform": "scaleY(1.05)",
+        "filter": "brightness(1.1)"
+      },
+      "labels": {
+        "fontSize": "caption",
+        "color": "text-muted",
+        "alignment": "center",
+        "animation": "clickable-text"
+      },
+      "darkModeGradient": "lemon → lime (#E0DB4B → #9EE000)"
+    },
+
+    "SearchInput": {
+      "description": "Search field with icon",
+      "default": {
+        "background": "surface-card-muted",
+        "borderRadius": "input (18px)",
+        "padding": "12px 16px 12px 44px",
+        "fontSize": "body",
+        "iconSize": "18px",
+        "iconColor": "text-muted"
+      },
+      "placeholder": {
+        "color": "text-muted"
+      },
+      "focus": {
+        "outline": "none",
+        "ring": "2px accent-teal at 50% opacity"
+      }
+    },
+
+    "Sidebar": {
+      "description": "Navigation sidebar with icons",
+      "layout": {
+        "width": "72px",
+        "padding": "24px 12px",
+        "background": "surface-card",
+        "alignment": "center"
+      },
+      "logo": {
+        "size": "40px",
+        "borderRadius": "12px",
+        "background": "gradient-main",
+        "animation": "gradient-shift, float-animate"
+      },
+      "navItem": {
+        "size": "44px",
+        "borderRadius": "14px",
+        "iconSize": "20px",
+        "animation": "sidebar-icon-animate"
+      },
+      "navItemActive": {
+        "background": "gradient-main",
+        "iconColor": "text-inverse"
+      },
+      "navItemInactive": {
+        "background": "transparent",
+        "iconColor": "text-muted"
+      }
+    },
+
+    "Topbar": {
+      "description": "Top navigation bar with search and user actions",
+      "layout": {
+        "height": "auto",
+        "padding": "16px 24px",
+        "background": "surface-card",
+        "borderBottom": "1px solid border-subtle"
+      },
+      "greeting": {
+        "title": {
+          "fontSize": "h2",
+          "fontWeight": "600",
+          "fontFamily": "display"
+        },
+        "subtitle": {
+          "fontSize": "caption",
+          "color": "text-secondary"
+        }
+      },
+      "actions": {
+        "gap": "12px"
+      }
+    }
+  },
+
+  "layout": {
+    "pageStructure": {
+      "description": "Standard page layout with sidebar and content area",
+      "container": "flex h-screen",
+      "sidebar": "fixed left-0 w-[72px]",
+      "mainArea": "flex-1 flex flex-col overflow-hidden",
+      "topbar": "sticky top-0",
+      "content": "flex-1 overflow-auto p-6"
+    },
+    "contentWidth": {
+      "maxWidth": "1200px",
+      "centering": "mx-auto"
+    },
+    "gridSystem": {
+      "columns": {
+        "mobile": 1,
+        "tablet": 2,
+        "desktop": 3,
+        "wide": 4
+      },
+      "gap": "24px"
+    },
+    "sectionSpacing": "28px"
+  },
+
+  "darkModeImplementation": {
+    "trigger": "Toggle class 'dark' on document.documentElement",
+    "cssStrategy": "CSS custom properties that change values in .dark selector",
+    "transition": {
+      "property": "background-color, color",
+      "duration": "400ms",
+      "timing": "cubic-bezier(0.4, 0, 0.2, 1)"
+    },
+    "colorMapping": {
+      "description": "Light mode cool tones map to dark mode warm tones",
+      "mint": "gold",
+      "teal": "lime",
+      "cyan": "yellow",
+      "blue": "green"
+    }
+  },
+
+  "iconography": {
+    "style": "Outline/stroke style, 1.5-2px stroke width",
+    "sizes": {
+      "small": "14px",
+      "medium": "16-18px",
+      "large": "20-24px"
+    },
+    "defaultColor": "currentColor (inherits from parent)",
+    "availableIcons": [
+      "ArrowUpIcon",
+      "MoreIcon",
+      "CalendarIcon",
+      "ChartIcon",
+      "UsersIcon",
+      "CheckIcon",
+      "PlusIcon",
+      "SearchIcon",
+      "HomeIcon",
+      "SettingsIcon",
+      "BellIcon",
+      "MoonIcon",
+      "SunIcon"
+    ]
+  },
+
+  "accessibilityGuidelines": {
+    "colorContrast": {
+      "minimumRatio": "4.5:1 for normal text, 3:1 for large text",
+      "note": "All text colors meet WCAG AA standards against their backgrounds"
+    },
+    "focusStates": {
+      "style": "2px ring with accent color at 50% opacity",
+      "visibility": "Must be clearly visible"
+    },
+    "interactiveElements": {
+      "minimumSize": "44px touch target for mobile",
+      "hoverStates": "All clickable elements must have hover feedback"
+    },
+    "motion": {
+      "respectsReducedMotion": "Consider adding @media (prefers-reduced-motion: reduce) queries"
+    }
+  },
+
+  "implementationNotes": {
+    "tailwindConfig": {
+      "description": "Using Tailwind CSS 4 with @theme directive for custom properties",
+      "customClasses": [
+        "rounded-card (20px)",
+        "rounded-input (18px)",
+        "rounded-chip (14px)",
+        "shadow-card",
+        "shadow-hover",
+        "shadow-chip"
+      ]
+    },
+    "animationClasses": {
+      "description": "Predefined animation classes for common interactions",
+      "classes": [
+        "btn-animate",
+        "card-animate",
+        "chip-animate",
+        "icon-btn-animate",
+        "stat-card-animate",
+        "list-item-animate",
+        "progress-animate",
+        "avatar-animate",
+        "sidebar-icon-animate",
+        "clickable-text",
+        "gradient-shift",
+        "glow-animate",
+        "float-animate",
+        "bar-animate"
+      ]
+    },
+    "gradientClasses": [
+      "gradient-main",
+      "gradient-card-1",
+      "gradient-card-2",
+      "gradient-card-3",
+      "gradient-card-4",
+      "gradient-text",
+      "gradient-bar"
+    ]
+  },
+
+  "aiInstructions": {
+    "generalGuidelines": [
+      "Always use the defined color tokens rather than hardcoded hex values",
+      "Apply appropriate animation classes to all interactive elements",
+      "Maintain consistent spacing using the defined scale",
+      "Use gradients for primary emphasis, solid colors for secondary",
+      "Ensure all new components support both light and dark modes",
+      "Follow the established border-radius conventions for element types",
+      "Use the correct font family (Poppins for display, Inter for body)"
+    ],
+    "componentCreation": [
+      "Reference existing component patterns for consistency",
+      "Include hover states with appropriate transforms and shadows",
+      "Add the clickable-text class to any text that triggers an action",
+      "Use card-animate for any card-like containers",
+      "Apply gradient backgrounds to primary action buttons",
+      "Ensure proper dark mode color mapping (cool → warm)"
+    ],
+    "doNot": [
+      "Use colors outside the defined palette",
+      "Create elements without hover/focus states",
+      "Use sharp corners (always apply appropriate border-radius)",
+      "Mix font families inappropriately",
+      "Ignore the spacing scale",
+      "Forget dark mode support"
+    ]
+  }
+}

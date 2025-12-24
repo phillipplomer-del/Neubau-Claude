@@ -20,24 +20,25 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseClasses =
-      'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
+      'inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
 
     const variantClasses = {
       primary:
-        'bg-primary text-primary-foreground hover:bg-primary-600 focus-visible:ring-primary',
+        'gradient-main text-white rounded-full btn-animate focus-visible:ring-primary',
       secondary:
-        'bg-secondary text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-secondary',
+        'bg-card text-foreground border border-border/50 rounded-full hover:bg-card-muted focus-visible:ring-secondary transition-all duration-300',
       outline:
-        'border border-border bg-transparent text-foreground hover:bg-accent focus-visible:ring-ring',
-      ghost: 'text-foreground hover:bg-accent focus-visible:ring-ring',
+        'border border-border bg-transparent text-foreground rounded-full hover:bg-accent/10 focus-visible:ring-ring transition-all duration-300',
+      ghost:
+        'text-foreground rounded-[var(--radius-chip)] hover:bg-card-muted focus-visible:ring-ring transition-all duration-300',
       danger:
-        'bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive',
+        'bg-destructive text-white rounded-full hover:bg-destructive/90 focus-visible:ring-destructive transition-all duration-300',
     };
 
     const sizeClasses = {
-      sm: 'h-8 px-3 text-sm',
-      md: 'h-10 px-4 text-base',
-      lg: 'h-12 px-6 text-lg',
+      sm: 'h-9 px-4 text-sm',
+      md: 'h-11 px-6 text-base',
+      lg: 'h-13 px-8 text-lg',
     };
 
     const classes = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
