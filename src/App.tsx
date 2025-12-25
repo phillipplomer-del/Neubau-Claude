@@ -26,6 +26,9 @@ import ControllingView from './pages/projectManagement/ControllingView';
 // Data Comparison pages
 import DataComparisonDashboard from './pages/dataComparison/Dashboard';
 
+// Visualization pages
+import ForceTreeView from './pages/visualization/ForceTreeView';
+
 function App() {
   return (
     <UserProvider>
@@ -63,6 +66,11 @@ function App() {
             {/* Data Comparison routes */}
             <Route path="datacomparison">
               <Route index element={<DataComparisonDashboard />} />
+            </Route>
+
+            {/* Visualization routes */}
+            <Route path="visualization">
+              <Route path="view1" element={<ForceTreeView />} />
             </Route>
 
             {/* Catch all - redirect to home */}

@@ -8,6 +8,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useSalesLedHierarchy, type SalesLedNode, type ViewMode } from '@/hooks/useSalesLedHierarchy';
 import Card, { CardContent } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import ToggleSwitch from '@/components/ui/ToggleSwitch';
 import {
   RefreshCw,
   AlertCircle,
@@ -454,6 +455,7 @@ export default function GanttView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [zoom, setZoom] = useState<ZoomLevel>('week');
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [hideCompletedItems, setHideCompletedItems] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const hasScrolledToToday = useRef(false);
 
@@ -467,6 +469,28 @@ export default function GanttView() {
     articlesWithProduction,
     articlesWithoutProduction,
   } = useSalesLedHierarchy({ viewMode, searchQuery });
+
+  // Filter out completed items recursively
+  const filterCompletedItems = useCallback((nodes: SalesLedNode[]): SalesLedNode[] => {
+    return nodes
+      .filter(node => {
+        // Filter out completed PAs and operations
+        if ((node.type === 'pa' || node.type === 'operation') && node.isCompleted) {
+          return false;
+        }
+        return true;
+      })
+      .map(node => ({
+        ...node,
+        children: filterCompletedItems(node.children),
+      }));
+  }, []);
+
+  // Apply completed items filter
+  const filteredHierarchy = useMemo(() => {
+    if (!hideCompletedItems) return hierarchy;
+    return filterCompletedItems(hierarchy);
+  }, [hierarchy, hideCompletedItems, filterCompletedItems]);
 
   // Calculate date range
   const { start: timelineStart, end: timelineEnd } = useMemo(
@@ -530,7 +554,7 @@ export default function GanttView() {
   }, []);
 
   const expandAll = () => {
-    const allIds = getAllNodeIds(hierarchy);
+    const allIds = getAllNodeIds(filteredHierarchy);
     setExpandedNodes(new Set(allIds));
   };
 
@@ -727,6 +751,13 @@ export default function GanttView() {
             <Calendar className="h-4 w-4 mr-2" />
             Heute
           </Button>
+
+          {/* Hide completed toggle */}
+          <ToggleSwitch
+            checked={hideCompletedItems}
+            onChange={(e) => setHideCompletedItems(e.target.checked)}
+            label="Offene"
+          />
 
           {/* Expand/Collapse controls */}
           <div className="flex items-center gap-1">
@@ -925,7 +956,7 @@ export default function GanttView() {
                   />
                 )}
 
-                {hierarchy.map((node) => (
+                {filteredHierarchy.map((node) => (
                   <GanttRow
                     key={node.id}
                     node={node}

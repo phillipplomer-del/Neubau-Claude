@@ -247,10 +247,32 @@ export default function ComparisonView() {
   const [showCosts, setShowCosts] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewLevel, setViewLevel] = useState<'all' | 'projects' | 'articles'>('all');
+  const [hideCompletedItems, setHideCompletedItems] = useState(false); // Hide individual completed PAs/operations
 
-  // Filter hierarchy based on search and view level
+  // Filter out completed items recursively
+  function filterCompletedItems(nodes: HierarchyNode[]): HierarchyNode[] {
+    return nodes
+      .filter(node => {
+        // Filter out completed PAs and operations
+        if ((node.type === 'pa' || node.type === 'mainPA' || node.type === 'operation') && node.isCompleted) {
+          return false;
+        }
+        return true;
+      })
+      .map(node => ({
+        ...node,
+        children: filterCompletedItems(node.children),
+      }));
+  }
+
+  // Filter hierarchy based on search, view level, and completed items
   const filteredHierarchy = useMemo(() => {
     let result = hierarchy;
+
+    // Apply completed items filter first
+    if (hideCompletedItems) {
+      result = filterCompletedItems(result);
+    }
 
     // Apply view level filter
     if (viewLevel === 'projects') {
@@ -296,7 +318,7 @@ export default function ComparisonView() {
     return result
       .map(node => filterNode(node, false))
       .filter((n): n is HierarchyNode => n !== null);
-  }, [hierarchy, searchQuery, viewLevel]);
+  }, [hierarchy, searchQuery, viewLevel, hideCompletedItems]);
 
   // Toggle node expansion
   const toggleNode = (nodeId: string) => {
@@ -482,12 +504,17 @@ export default function ComparisonView() {
           <ToggleSwitch
             checked={hideCompleted}
             onChange={(e) => setHideCompleted(e.target.checked)}
-            label="Abgeschlossene ausblenden"
+            label="Projekte"
+          />
+          <ToggleSwitch
+            checked={hideCompletedItems}
+            onChange={(e) => setHideCompletedItems(e.target.checked)}
+            label="Offene"
           />
           <ToggleSwitch
             checked={showCosts}
             onChange={(e) => setShowCosts(e.target.checked)}
-            label="Kosten anzeigen"
+            label="Kosten"
           />
         </div>
       </div>

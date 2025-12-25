@@ -17,6 +17,8 @@ export interface HierarchyNode {
   name: string;
   identifier: string; // projektnummer, artikelnummer, PA number, etc.
   articleNumber?: string; // Artikelnummer for PA/MainPA nodes
+  description?: string; // Product description (from productDescription field)
+  isMainArticle?: boolean; // True if this is a Verkaufsartikel (no HauptPaNummer)
   children: HierarchyNode[];
 
   // Aggregated values (sum of children)
@@ -34,6 +36,7 @@ export interface HierarchyNode {
   // Status (aggregated)
   completionPercentage: number;
   isActive: boolean;
+  isCompleted: boolean; // True if status indicates closed OR (inactive AND 100%)
   status?: string;
 
   // Count
@@ -159,7 +162,10 @@ function isNodeFullyCompleted(node: HierarchyNode): boolean {
 
 /**
  * Build hierarchy from flat production entries
- * Structure: Project → Article → PA → Operations
+ * Structure: Project → Verkaufsartikel → (Unterartikel + PAs) → Operations
+ *
+ * Verkaufsartikel = Article with NO HauptPaNummer (mainWorkOrderNumber)
+ * Unterartikel = Article WITH HauptPaNummer, nested under parent Verkaufsartikel
  */
 function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
   // Group entries by: Project → Article → PA → Operations
@@ -192,8 +198,9 @@ function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
   projectMap.forEach((articleMap, projectKey) => {
     const isNoProject = projectKey === '__NO_PROJECT__';
 
-    // Build Article nodes under project
-    const articleNodes: HierarchyNode[] = [];
+    // First pass: Build all article nodes and track their PAs
+    const allArticleNodes: HierarchyNode[] = [];
+    const paToArticleMap = new Map<string, string>(); // PA number → Article number
 
     articleMap.forEach((paMap, articleKey) => {
       const isNoArticle = articleKey === '__NO_ARTICLE__';
@@ -203,6 +210,11 @@ function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
 
       paMap.forEach((operations, paKey) => {
         const isNoPA = paKey === '__NO_PA__';
+
+        // Track which article owns this PA
+        if (!isNoPA && !isNoArticle) {
+          paToArticleMap.set(paKey, articleKey);
+        }
 
         // Build operation nodes (leaf nodes)
         const operationNodes: HierarchyNode[] = operations.map((entry, idx) => {
@@ -215,6 +227,7 @@ function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
             type: 'operation' as const,
             name: opName,
             identifier: entry.operationNumber || '',
+            description: entry.productDescription,
             children: [],
             plannedHours,
             actualHours,
@@ -226,6 +239,7 @@ function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
             endDate: entry.plannedEndDate,
             completionPercentage: entry.completionPercentage || 0,
             isActive: entry.active === 'X' || entry.active === true,
+            isCompleted: isEntryCompleted(entry),
             status: entry.status,
             operationCount: 1,
             paCount: 0,
@@ -252,20 +266,93 @@ function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
 
       // Article node (aggregates PAs)
       if (!isNoArticle) {
+        // Check if this is a Verkaufsartikel (main article)
+        // A Verkaufsartikel has NO mainWorkOrderNumber (HauptPaNummer) in any of its operations
+        let isMainArticle = true;
+        let hauptPaNummer: string | undefined; // The HauptPA this article is linked to
+
+        paMap.forEach((operations) => {
+          for (const op of operations) {
+            if (isValidValue(op.mainWorkOrderNumber)) {
+              isMainArticle = false;
+              hauptPaNummer = op.mainWorkOrderNumber;
+              break;
+            }
+          }
+        });
+
         const articleNode = aggregateNode({
           id: `article-${projectKey}-${articleKey}`,
           type: 'article',
           name: `Artikel ${articleKey}`,
           identifier: articleKey,
           articleNumber: articleKey,
+          isMainArticle,
+          // Store HauptPA reference temporarily for restructuring
+          description: hauptPaNummer ? `__HAUPT_PA__:${hauptPaNummer}` : undefined,
           children: paNodes,
         });
-        articleNodes.push(articleNode);
+        allArticleNodes.push(articleNode);
       } else {
-        // No article - add PAs directly
-        articleNodes.push(...paNodes);
+        // No article - add PAs directly (shouldn't happen normally)
+        allArticleNodes.push(...paNodes as HierarchyNode[]);
       }
     });
+
+    // Second pass: Restructure - nest Unterartikel under their Verkaufsartikel
+    const verkaufsartikel = allArticleNodes.filter(a => a.isMainArticle === true);
+    const unterartikel = allArticleNodes.filter(a => a.isMainArticle === false && a.type === 'article');
+
+    // For each Unterartikel, find its parent Verkaufsartikel via HauptPaNummer
+    for (const unter of unterartikel) {
+      // Extract HauptPA number from temporary description field
+      const hauptPaMatch = unter.description?.match(/^__HAUPT_PA__:(.+)$/);
+      if (hauptPaMatch) {
+        const hauptPaNummer = hauptPaMatch[1];
+        // Find which Verkaufsartikel owns this HauptPA
+        const parentArticleKey = paToArticleMap.get(hauptPaNummer!);
+
+        if (parentArticleKey) {
+          // Find the parent Verkaufsartikel
+          const parent = verkaufsartikel.find(v => v.identifier === parentArticleKey);
+          if (parent) {
+            // Clear the temporary description and add to parent
+            unter.description = undefined;
+            parent.children.push(unter);
+            continue;
+          }
+        }
+      }
+      // Clear temporary description even if no parent found
+      if (unter.description?.startsWith('__HAUPT_PA__:')) {
+        unter.description = undefined;
+      }
+    }
+
+    // Re-aggregate Verkaufsartikel after adding Unterartikel
+    const finalArticleNodes = verkaufsartikel.map(v => {
+      // Re-aggregate to update counts and sums
+      return aggregateNode({
+        id: v.id,
+        type: v.type,
+        name: v.name,
+        identifier: v.identifier,
+        articleNumber: v.articleNumber,
+        isMainArticle: v.isMainArticle,
+        description: v.description,
+        children: v.children,
+      });
+    });
+
+    // Add any orphaned Unterartikel (ones without a parent) directly
+    const nestedUnterartikelIds = new Set(
+      finalArticleNodes.flatMap(v =>
+        v.children.filter(c => c.type === 'article').map(c => c.id)
+      )
+    );
+    const orphanedUnterartikel = unterartikel.filter(u => !nestedUnterartikelIds.has(u.id));
+
+    const projectChildren = [...finalArticleNodes, ...orphanedUnterartikel];
 
     // Project node - always create if we have a project number
     if (!isNoProject) {
@@ -274,12 +361,12 @@ function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
         type: 'project',
         name: `Projekt ${projectKey}`,
         identifier: projectKey,
-        children: articleNodes,
+        children: projectChildren,
       });
       rootNodes.push(projectNode);
     } else {
       // No project - add articles directly to root
-      rootNodes.push(...articleNodes);
+      rootNodes.push(...projectChildren);
     }
   });
 
@@ -296,6 +383,8 @@ function aggregateNode(partial: {
   name: string;
   identifier: string;
   articleNumber?: string;
+  description?: string;
+  isMainArticle?: boolean;
   children: HierarchyNode[];
 }): HierarchyNode {
   const children = partial.children;
@@ -310,6 +399,8 @@ function aggregateNode(partial: {
   let endDate: Date | undefined;
   let totalCompletion = 0;
   let activeCount = 0;
+  let allCompleted = children.length > 0; // Start true, becomes false if any child is not completed
+  let description = partial.description;
 
   for (const child of children) {
     plannedHours += child.plannedHours;
@@ -320,6 +411,12 @@ function aggregateNode(partial: {
     paCount += child.type === 'pa' ? 1 : child.paCount;
     totalCompletion += child.completionPercentage * child.operationCount;
     if (child.isActive) activeCount++;
+    if (!child.isCompleted) allCompleted = false;
+
+    // Inherit description from first child that has one
+    if (!description && child.description) {
+      description = child.description;
+    }
 
     if (child.startDate) {
       if (!startDate || child.startDate < startDate) {
@@ -335,6 +432,7 @@ function aggregateNode(partial: {
 
   return {
     ...partial,
+    description,
     plannedHours,
     actualHours,
     plannedCosts,
@@ -345,6 +443,7 @@ function aggregateNode(partial: {
     endDate,
     completionPercentage: operationCount > 0 ? totalCompletion / operationCount : 0,
     isActive: activeCount > 0,
+    isCompleted: allCompleted,
     operationCount,
     paCount,
   };

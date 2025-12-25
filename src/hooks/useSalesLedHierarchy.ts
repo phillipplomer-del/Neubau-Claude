@@ -34,6 +34,7 @@ export interface SalesLedNode {
   startDate?: Date;
   endDate?: Date;
   completionPercentage: number;
+  isCompleted: boolean; // True if all production items are completed
 
   // For variance display
   hoursVariance: number;
@@ -98,6 +99,33 @@ function deserializeProductionEntry(entry: ProductionEntry): ProductionEntry {
  */
 function getBestDeliveryDate(entry: SalesEntry): Date | undefined {
   return entry.confirmedDeliveryDate || entry.requestedDeliveryDate || entry.deliveryDate;
+}
+
+/**
+ * Check if a production entry is completed/closed
+ */
+function isProductionEntryCompleted(entry: ProductionEntry): boolean {
+  // Check status field for completion keywords
+  if (entry.status) {
+    const status = entry.status.toLowerCase();
+    if (
+      status.includes('geschlossen') ||
+      status.includes('closed') ||
+      status.includes('abgeschlossen') ||
+      status.includes('fertig') ||
+      status.includes('erledigt')
+    ) {
+      return true;
+    }
+  }
+
+  // Check if not active and 100% complete
+  const isActive = entry.active === 'X' || entry.active === true;
+  if (!isActive && entry.completionPercentage === 100) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -255,6 +283,7 @@ function buildPANode(
       startDate: op.plannedStartDate,
       endDate: op.plannedEndDate,
       completionPercentage: op.completionPercentage || 0,
+      isCompleted: isProductionEntryCompleted(op),
       children: [],
       productionEntry: op,
     };
@@ -292,6 +321,9 @@ function buildPANode(
   // Get description from first operation
   const description = sortedOps[0]?.productDescription || sortedOps[0]?.notes || '';
 
+  // PA is completed if all children are completed
+  const allChildrenCompleted = allChildren.length > 0 && allChildren.every(c => c.isCompleted);
+
   return {
     id: `pa-${paNumber}`,
     type: 'pa',
@@ -304,6 +336,7 @@ function buildPANode(
     startDate,
     endDate,
     completionPercentage: avgCompletion,
+    isCompleted: allChildrenCompleted,
     children: allChildren,
   };
 }
@@ -416,6 +449,7 @@ function buildHierarchy(
             actualHours: 0,
             hoursVariance: 0,
             completionPercentage: 0,
+            isCompleted: false,
             children: [],
           });
         }
@@ -432,6 +466,10 @@ function buildHierarchy(
           if (child.endDate && (!endDate || child.endDate > endDate)) endDate = child.endDate;
         }
 
+        // Article is completed if all PA children are completed
+        const paChildren = children.filter(c => c.type === 'pa');
+        const articleCompleted = paChildren.length > 0 && paChildren.every(c => c.isCompleted);
+
         const articleNode: SalesLedNode = {
           id: `article-${projektnummer}-${artikelnummer}`,
           type: 'article',
@@ -446,9 +484,10 @@ function buildHierarchy(
           hoursVariance: totalActualHours - totalPlannedHours,
           startDate,
           endDate,
-          completionPercentage: hasProduction && children.length > 0
-            ? children.filter(c => c.type === 'pa').reduce((sum, c) => sum + c.completionPercentage, 0) / children.filter(c => c.type === 'pa').length
+          completionPercentage: hasProduction && paChildren.length > 0
+            ? paChildren.reduce((sum, c) => sum + c.completionPercentage, 0) / paChildren.length
             : 0,
+          isCompleted: articleCompleted,
           children,
         };
 
@@ -476,6 +515,10 @@ function buildHierarchy(
       // Get customer name from first entry that has one
       const customerName = entries.find(e => e.customerName)?.customerName;
 
+      // Project is completed if all articles with production are completed
+      const articlesWithProd = articleNodes.filter(a => a.hasProduction);
+      const projectCompleted = articlesWithProd.length > 0 && articlesWithProd.every(a => a.isCompleted);
+
       const projectNode: SalesLedNode = {
         id: `project-${projektnummer}`,
         type: 'project',
@@ -493,6 +536,7 @@ function buildHierarchy(
         completionPercentage: articleNodes.length > 0
           ? articleNodes.reduce((sum, a) => sum + a.completionPercentage, 0) / articleNodes.length
           : 0,
+        isCompleted: projectCompleted,
         children: articleNodes,
       };
 
@@ -554,6 +598,7 @@ function buildHierarchy(
           actualHours: 0,
           hoursVariance: 0,
           completionPercentage: 0,
+          isCompleted: false,
           children: [],
         });
       }
@@ -567,6 +612,10 @@ function buildHierarchy(
         if (child.startDate && (!startDate || child.startDate < startDate)) startDate = child.startDate;
         if (child.endDate && (!endDate || child.endDate > endDate)) endDate = child.endDate;
       }
+
+      // Article is completed if all PA children are completed
+      const paChildNodes = children.filter(c => c.type === 'pa');
+      const articleIsCompleted = paChildNodes.length > 0 && paChildNodes.every(c => c.isCompleted);
 
       const articleNode: SalesLedNode = {
         id: `article-${entry.id || artikelnummer}`,
@@ -582,9 +631,10 @@ function buildHierarchy(
         hoursVariance: totalActualHours - totalPlannedHours,
         startDate,
         endDate,
-        completionPercentage: hasProduction && children.length > 0
-          ? children.filter(c => c.type === 'pa').reduce((sum, c) => sum + c.completionPercentage, 0) / children.filter(c => c.type === 'pa').length
+        completionPercentage: hasProduction && paChildNodes.length > 0
+          ? paChildNodes.reduce((sum, c) => sum + c.completionPercentage, 0) / paChildNodes.length
           : 0,
+        isCompleted: articleIsCompleted,
         children,
       };
 
