@@ -28,6 +28,7 @@ import DataComparisonDashboard from './pages/dataComparison/Dashboard';
 
 // Visualization pages
 import ForceTreeView from './pages/visualization/ForceTreeView';
+import ForceTimelineView from './pages/visualization/ForceTimelineView';
 
 function App() {
   return (
@@ -71,6 +72,7 @@ function App() {
             {/* Visualization routes */}
             <Route path="visualization">
               <Route path="view1" element={<ForceTreeView />} />
+              <Route path="view2" element={<ForceTimelineView />} />
             </Route>
 
             {/* Catch all - redirect to home */}

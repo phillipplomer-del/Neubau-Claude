@@ -1,11 +1,19 @@
 /**
  * Production Hierarchy Hook
  * Groups production data into a hierarchical structure:
- * Project (optional) → Article → Main PA → PA → Operations
+ * Project (optional) → Verkaufsartikel → Unterartikel → PA → Operations
+ *
+ * Verkaufsartikel = Article that:
+ *   1. Has NO HauptPaNummer (mainWorkOrderNumber)
+ *   2. Does NOT match pattern TR-0000xxxx (min 4 zeros after TR-)
+ *   3. IS in the SalesList (artikelnummer matches)
+ *
+ * Unterartikel = Everything else (has HauptPaNummer OR matches TR-pattern OR not in SalesList)
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { productionRepository } from '@/lib/db/repositories/productionRepository';
+import { salesRepository } from '@/lib/db/repositories/salesRepository';
 import type { ProductionEntry } from '@/types/production';
 
 /**
@@ -101,6 +109,63 @@ function isValidValue(value: string | undefined | null): value is string {
 }
 
 /**
+ * Check if article number matches TR-0000xxxx pattern (min 4 zeros after TR-)
+ * These are ALWAYS Unterartikel, never Verkaufsartikel
+ */
+function isTRUnterartikelPattern(artikelnummer: string): boolean {
+  // Pattern: TR- followed by at least 4 zeros, then anything
+  // Examples: TR-000012345, TR-00001, TR-0000 all match
+  return /^TR-0{4,}/.test(artikelnummer);
+}
+
+/**
+ * Check if article number ends with "-R" (Rohartikel)
+ * These are raw material articles that belong under their parent article
+ * E.g., "12345-R" belongs under "12345"
+ */
+function isRohartikel(artikelnummer: string): boolean {
+  return artikelnummer.endsWith('-R');
+}
+
+/**
+ * Get parent article number for Rohartikel
+ * E.g., "12345-R" → "12345"
+ */
+function getRohartikelParent(artikelnummer: string): string {
+  return artikelnummer.slice(0, -2); // Remove "-R"
+}
+
+/**
+ * Check if an article can be a Verkaufsartikel
+ * Must meet ALL criteria:
+ * 1. No HauptPaNummer (checked separately)
+ * 2. Not matching TR-0000xxxx pattern
+ * 3. Not a Rohartikel (ending with -R)
+ * 4. In the SalesList
+ */
+function canBeVerkaufsartikel(
+  artikelnummer: string,
+  salesArticleNumbers: Set<string>
+): boolean {
+  // Rule 1: Not TR-0000xxxx pattern
+  if (isTRUnterartikelPattern(artikelnummer)) {
+    return false;
+  }
+
+  // Rule 2: Not a Rohartikel
+  if (isRohartikel(artikelnummer)) {
+    return false;
+  }
+
+  // Rule 3: Must be in SalesList
+  if (!salesArticleNumbers.has(artikelnummer)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Check if an entry is completed/closed
  * An entry is completed if:
  * - status contains "geschlossen", "closed", "abgeschlossen", "fertig"
@@ -164,90 +229,109 @@ function isNodeFullyCompleted(node: HierarchyNode): boolean {
  * Build hierarchy from flat production entries
  * Structure: Project → Verkaufsartikel → (Unterartikel + PAs) → Operations
  *
- * Verkaufsartikel = Article with NO HauptPaNummer (mainWorkOrderNumber)
- * Unterartikel = Article WITH HauptPaNummer, nested under parent Verkaufsartikel
+ * Verkaufsartikel = Article that:
+ *   1. Has NO HauptPaNummer (mainWorkOrderNumber)
+ *   2. Does NOT match pattern TR-0000xxxx
+ *   3. IS in the SalesList
+ *
+ * Unterartikel = Everything else, nested under parent Verkaufsartikel
+ *
+ * IMPORTANT: Same artikelnummer can appear multiple times (serial production)
+ * - For Unterartikel: Each distinct mainWorkOrderNumber creates a separate instance
+ * - For Verkaufsartikel: Each set of PAs that are NOT referenced as HauptPA by Unterartikel
  */
-function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
-  // Group entries by: Project → Article → PA → Operations
-  const projectMap = new Map<string, Map<string, Map<string, ProductionEntry[]>>>();
+function buildHierarchy(entries: ProductionEntry[], salesArticleNumbers: Set<string>): HierarchyNode[] {
+  // Group entries by: Project → (Article + HauptPA context) → PA → Operations
+  // Key insight: Group by (artikelnummer, mainWorkOrderNumber) to handle serial production
+  const projectMap = new Map<string, {
+    // Verkaufsartikel: artikelnummer → PA → Operations (no mainWorkOrderNumber)
+    verkaufsartikel: Map<string, Map<string, ProductionEntry[]>>;
+    // Unterartikel: (artikelnummer + mainWorkOrderNumber) → PA → Operations
+    unterartikel: Map<string, Map<string, ProductionEntry[]>>;
+    // Track which PAs belong to which Verkaufsartikel
+    paToVerkaufsartikel: Map<string, string>;
+  }>();
 
+  // First pass: Separate Verkaufsartikel and Unterartikel entries
+  // An entry is Verkaufsartikel if:
+  //   1. No HauptPaNummer
+  //   2. artikelnummer does NOT match TR-0000xxxx pattern
+  //   3. artikelnummer IS in SalesList
   for (const entry of entries) {
     const projectKey = isValidValue(entry.projektnummer) ? entry.projektnummer : '__NO_PROJECT__';
     const articleKey = isValidValue(entry.artikelnummer) ? entry.artikelnummer : '__NO_ARTICLE__';
     const paKey = isValidValue(entry.workOrderNumber) ? entry.workOrderNumber : '__NO_PA__';
+    const hauptPaKey = isValidValue(entry.mainWorkOrderNumber) ? entry.mainWorkOrderNumber : null;
 
     if (!projectMap.has(projectKey)) {
-      projectMap.set(projectKey, new Map());
+      projectMap.set(projectKey, {
+        verkaufsartikel: new Map(),
+        unterartikel: new Map(),
+        paToVerkaufsartikel: new Map(),
+      });
     }
-    const articleMap = projectMap.get(projectKey)!;
+    const projectData = projectMap.get(projectKey)!;
 
-    if (!articleMap.has(articleKey)) {
-      articleMap.set(articleKey, new Map());
-    }
-    const paMap = articleMap.get(articleKey)!;
+    // Determine if this is a Verkaufsartikel or Unterartikel
+    const isVerkaufsartikelEntry =
+      !hauptPaKey && // No HauptPaNummer
+      articleKey !== '__NO_ARTICLE__' &&
+      canBeVerkaufsartikel(articleKey, salesArticleNumbers);
 
-    if (!paMap.has(paKey)) {
-      paMap.set(paKey, []);
+    if (!isVerkaufsartikelEntry) {
+      // This is an Unterartikel entry
+      // Group by (artikelnummer + hauptPaNummer) for separate instances
+      // If no hauptPaKey, use a special marker
+      const instanceKey = hauptPaKey
+        ? `${articleKey}:::${hauptPaKey}`
+        : `${articleKey}:::__FORCED_UNTER__`;
+
+      if (!projectData.unterartikel.has(instanceKey)) {
+        projectData.unterartikel.set(instanceKey, new Map());
+      }
+      const paMap = projectData.unterartikel.get(instanceKey)!;
+
+      if (!paMap.has(paKey)) {
+        paMap.set(paKey, []);
+      }
+      paMap.get(paKey)!.push(entry);
+    } else {
+      // This is a Verkaufsartikel entry (no HauptPaNummer + passes all checks)
+      if (!projectData.verkaufsartikel.has(articleKey)) {
+        projectData.verkaufsartikel.set(articleKey, new Map());
+      }
+      const paMap = projectData.verkaufsartikel.get(articleKey)!;
+
+      if (!paMap.has(paKey)) {
+        paMap.set(paKey, []);
+      }
+      paMap.get(paKey)!.push(entry);
+
+      // Track PA ownership
+      if (paKey !== '__NO_PA__') {
+        projectData.paToVerkaufsartikel.set(paKey, articleKey);
+      }
     }
-    paMap.get(paKey)!.push(entry);
   }
 
   // Build tree structure
   const rootNodes: HierarchyNode[] = [];
 
-  projectMap.forEach((articleMap, projectKey) => {
+  projectMap.forEach((projectData, projectKey) => {
     const isNoProject = projectKey === '__NO_PROJECT__';
+    const { verkaufsartikel, unterartikel, paToVerkaufsartikel } = projectData;
 
-    // First pass: Build all article nodes and track their PAs
-    const allArticleNodes: HierarchyNode[] = [];
-    const paToArticleMap = new Map<string, string>(); // PA number → Article number
+    // Build Verkaufsartikel nodes
+    const verkaufsartikelNodes: HierarchyNode[] = [];
 
-    articleMap.forEach((paMap, articleKey) => {
+    verkaufsartikel.forEach((paMap, articleKey) => {
       const isNoArticle = articleKey === '__NO_ARTICLE__';
-
-      // Build PA nodes under article
       const paNodes: HierarchyNode[] = [];
 
       paMap.forEach((operations, paKey) => {
         const isNoPA = paKey === '__NO_PA__';
+        const operationNodes = buildOperationNodes(operations, projectKey, articleKey, paKey);
 
-        // Track which article owns this PA
-        if (!isNoPA && !isNoArticle) {
-          paToArticleMap.set(paKey, articleKey);
-        }
-
-        // Build operation nodes (leaf nodes)
-        const operationNodes: HierarchyNode[] = operations.map((entry, idx) => {
-          const opName = entry.notes || entry.operationNumber || `Operation ${idx + 1}`;
-          // Convert from minutes to hours (data comes in minutes from Excel)
-          const plannedHours = (entry.plannedHours || 0) / 60;
-          const actualHours = (entry.actualHours || 0) / 60;
-          return {
-            id: `op-${entry.id || idx}`,
-            type: 'operation' as const,
-            name: opName,
-            identifier: entry.operationNumber || '',
-            description: entry.productDescription,
-            children: [],
-            plannedHours,
-            actualHours,
-            plannedCosts: entry.plannedCosts || 0,
-            actualCosts: entry.actualCosts || 0,
-            hoursVariance: actualHours - plannedHours,
-            costsVariance: (entry.actualCosts || 0) - (entry.plannedCosts || 0),
-            startDate: entry.plannedStartDate,
-            endDate: entry.plannedEndDate,
-            completionPercentage: entry.completionPercentage || 0,
-            isActive: entry.active === 'X' || entry.active === true,
-            isCompleted: isEntryCompleted(entry),
-            status: entry.status,
-            operationCount: 1,
-            paCount: 0,
-            entry,
-          };
-        });
-
-        // PA node (aggregates operations)
         if (!isNoPA) {
           const paNode = aggregateNode({
             id: `pa-${projectKey}-${articleKey}-${paKey}`,
@@ -259,119 +343,197 @@ function buildHierarchy(entries: ProductionEntry[]): HierarchyNode[] {
           });
           paNodes.push(paNode);
         } else {
-          // No PA - add operations directly
           paNodes.push(...operationNodes);
         }
       });
 
-      // Article node (aggregates PAs)
       if (!isNoArticle) {
-        // Check if this is a Verkaufsartikel (main article)
-        // A Verkaufsartikel has NO mainWorkOrderNumber (HauptPaNummer) in any of its operations
-        let isMainArticle = true;
-        let hauptPaNummer: string | undefined; // The HauptPA this article is linked to
-
-        paMap.forEach((operations) => {
-          for (const op of operations) {
-            if (isValidValue(op.mainWorkOrderNumber)) {
-              isMainArticle = false;
-              hauptPaNummer = op.mainWorkOrderNumber;
-              break;
-            }
-          }
-        });
-
         const articleNode = aggregateNode({
           id: `article-${projectKey}-${articleKey}`,
           type: 'article',
           name: `Artikel ${articleKey}`,
           identifier: articleKey,
           articleNumber: articleKey,
-          isMainArticle,
-          // Store HauptPA reference temporarily for restructuring
-          description: hauptPaNummer ? `__HAUPT_PA__:${hauptPaNummer}` : undefined,
+          isMainArticle: true,
           children: paNodes,
         });
-        allArticleNodes.push(articleNode);
+        verkaufsartikelNodes.push(articleNode);
       } else {
-        // No article - add PAs directly (shouldn't happen normally)
-        allArticleNodes.push(...paNodes as HierarchyNode[]);
+        verkaufsartikelNodes.push(...paNodes);
       }
     });
 
-    // Second pass: Restructure - nest Unterartikel under their Verkaufsartikel
-    const verkaufsartikel = allArticleNodes.filter(a => a.isMainArticle === true);
-    const unterartikel = allArticleNodes.filter(a => a.isMainArticle === false && a.type === 'article');
+    // Build Unterartikel nodes and nest them under their Verkaufsartikel
+    unterartikel.forEach((paMap, instanceKey) => {
+      const [articleKey, hauptPaNummer] = instanceKey.split(':::');
+      const isNoArticle = articleKey === '__NO_ARTICLE__';
+      const paNodes: HierarchyNode[] = [];
 
-    // For each Unterartikel, find its parent Verkaufsartikel via HauptPaNummer
-    for (const unter of unterartikel) {
-      // Extract HauptPA number from temporary description field
-      const hauptPaMatch = unter.description?.match(/^__HAUPT_PA__:(.+)$/);
-      if (hauptPaMatch) {
-        const hauptPaNummer = hauptPaMatch[1];
-        // Find which Verkaufsartikel owns this HauptPA
-        const parentArticleKey = paToArticleMap.get(hauptPaNummer!);
+      paMap.forEach((operations, paKey) => {
+        const isNoPA = paKey === '__NO_PA__';
+        const operationNodes = buildOperationNodes(operations, projectKey, articleKey!, paKey);
 
-        if (parentArticleKey) {
-          // Find the parent Verkaufsartikel
-          const parent = verkaufsartikel.find(v => v.identifier === parentArticleKey);
-          if (parent) {
-            // Clear the temporary description and add to parent
-            unter.description = undefined;
-            parent.children.push(unter);
-            continue;
-          }
+        if (!isNoPA) {
+          const paNode = aggregateNode({
+            id: `pa-${projectKey}-${instanceKey}-${paKey}`,
+            type: 'pa',
+            name: `PA ${paKey}`,
+            identifier: paKey,
+            articleNumber: isNoArticle ? undefined : articleKey,
+            children: operationNodes,
+          });
+          paNodes.push(paNode);
+        } else {
+          paNodes.push(...operationNodes);
         }
+      });
+
+      if (!isNoArticle) {
+        const unterartikelNode = aggregateNode({
+          id: `article-${projectKey}-${instanceKey}`,
+          type: 'article',
+          name: `Artikel ${articleKey}`,
+          identifier: articleKey!,
+          articleNumber: articleKey,
+          isMainArticle: false,
+          children: paNodes,
+        });
+
+        // Find parent Verkaufsartikel via HauptPaNummer
+        // IMPORTANT: Unterartikel must ALWAYS be nested under a Verkaufsartikel
+        // They are NEVER shown at project level
+        const parentArticleKey = paToVerkaufsartikel.get(hauptPaNummer!);
+        const parentNode = parentArticleKey
+          ? verkaufsartikelNodes.find(v => v.identifier === parentArticleKey && v.isMainArticle === true)
+          : null;
+
+        if (parentNode) {
+          // Nest under parent Verkaufsartikel
+          parentNode.children.push(unterartikelNode);
+        }
+        // If no parent found, the Unterartikel is NOT added (better than wrong hierarchy)
       }
-      // Clear temporary description even if no parent found
-      if (unter.description?.startsWith('__HAUPT_PA__:')) {
-        unter.description = undefined;
-      }
+    });
+
+    // Nest Rohartikel (-R suffix) under their parent article
+    // E.g., "12345-R" should be nested under "12345"
+    // This requires a second pass after all Unterartikel are built
+    function nestRohartikelRecursively(nodes: HierarchyNode[]): void {
+      // Collect Rohartikel and their indices for removal
+      const rohartikelToMove: { node: HierarchyNode; parentIdentifier: string; index: number }[] = [];
+
+      nodes.forEach((node, index) => {
+        if (node.type === 'article' && isRohartikel(node.identifier)) {
+          const parentIdentifier = getRohartikelParent(node.identifier);
+          rohartikelToMove.push({ node, parentIdentifier, index });
+        }
+      });
+
+      // Remove Rohartikel from current level and nest under parent
+      // Process in reverse order to preserve indices during removal
+      rohartikelToMove.reverse().forEach(({ node, parentIdentifier, index }) => {
+        // Find parent article at this level or in children
+        const parentNode = nodes.find(n =>
+          n.type === 'article' &&
+          n.identifier === parentIdentifier &&
+          !isRohartikel(n.identifier)
+        );
+
+        if (parentNode) {
+          // Remove from current level
+          nodes.splice(index, 1);
+          // Add to parent's children
+          parentNode.children.push(node);
+        }
+      });
+
+      // Recursively process children
+      nodes.forEach(node => {
+        if (node.children.length > 0) {
+          nestRohartikelRecursively(node.children);
+        }
+      });
     }
 
-    // Re-aggregate Verkaufsartikel after adding Unterartikel
-    const finalArticleNodes = verkaufsartikel.map(v => {
-      // Re-aggregate to update counts and sums
-      return aggregateNode({
-        id: v.id,
-        type: v.type,
-        name: v.name,
-        identifier: v.identifier,
-        articleNumber: v.articleNumber,
-        isMainArticle: v.isMainArticle,
-        description: v.description,
-        children: v.children,
-      });
+    // Apply Rohartikel nesting to all Verkaufsartikel
+    verkaufsartikelNodes.forEach(vNode => {
+      if (vNode.children.length > 0) {
+        nestRohartikelRecursively(vNode.children);
+      }
     });
 
-    // Add any orphaned Unterartikel (ones without a parent) directly
-    const nestedUnterartikelIds = new Set(
-      finalArticleNodes.flatMap(v =>
-        v.children.filter(c => c.type === 'article').map(c => c.id)
-      )
-    );
-    const orphanedUnterartikel = unterartikel.filter(u => !nestedUnterartikelIds.has(u.id));
+    // Re-aggregate Verkaufsartikel after adding Unterartikel and Rohartikel
+    const finalArticleNodes = verkaufsartikelNodes.map(v => {
+      if (v.type === 'article') {
+        return aggregateNode({
+          id: v.id,
+          type: v.type,
+          name: v.name,
+          identifier: v.identifier,
+          articleNumber: v.articleNumber,
+          isMainArticle: v.isMainArticle,
+          description: v.description,
+          children: v.children,
+        });
+      }
+      return v;
+    });
 
-    const projectChildren = [...finalArticleNodes, ...orphanedUnterartikel];
-
-    // Project node - always create if we have a project number
+    // Project node
     if (!isNoProject) {
       const projectNode = aggregateNode({
         id: `project-${projectKey}`,
         type: 'project',
         name: `Projekt ${projectKey}`,
         identifier: projectKey,
-        children: projectChildren,
+        children: finalArticleNodes,
       });
       rootNodes.push(projectNode);
     } else {
-      // No project - add articles directly to root
-      rootNodes.push(...projectChildren);
+      rootNodes.push(...finalArticleNodes);
     }
   });
 
-  // Sort by identifier (numeric sorting ensures PA order: small → large = production sequence)
   return sortNodes(rootNodes);
+}
+
+/**
+ * Build operation nodes from entries
+ */
+function buildOperationNodes(
+  operations: ProductionEntry[],
+  projectKey: string,
+  articleKey: string,
+  paKey: string
+): HierarchyNode[] {
+  return operations.map((entry, idx) => {
+    const opName = entry.notes || entry.operationNumber || `Operation ${idx + 1}`;
+    const plannedHours = (entry.plannedHours || 0) / 60;
+    const actualHours = (entry.actualHours || 0) / 60;
+    return {
+      id: `op-${projectKey}-${articleKey}-${paKey}-${entry.id || idx}`,
+      type: 'operation' as const,
+      name: opName,
+      identifier: entry.operationNumber || '',
+      description: entry.productDescription,
+      children: [],
+      plannedHours,
+      actualHours,
+      plannedCosts: entry.plannedCosts || 0,
+      actualCosts: entry.actualCosts || 0,
+      hoursVariance: actualHours - plannedHours,
+      costsVariance: (entry.actualCosts || 0) - (entry.plannedCosts || 0),
+      startDate: entry.plannedStartDate,
+      endDate: entry.plannedEndDate,
+      completionPercentage: entry.completionPercentage || 0,
+      isActive: entry.active === 'X' || entry.active === true,
+      isCompleted: isEntryCompleted(entry),
+      status: entry.status,
+      operationCount: 1,
+      paCount: 0,
+      entry,
+    };
+  });
 }
 
 /**
@@ -469,19 +631,34 @@ export function useProductionHierarchy(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [flatList, setFlatList] = useState<ProductionEntry[]>([]);
+  const [salesArticleNumbers, setSalesArticleNumbers] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const entries = await productionRepository.getAll();
-      const deserializedEntries = entries.map(deserializeProductionEntry);
+      // Fetch both production and sales data in parallel
+      const [productionEntries, salesEntries] = await Promise.all([
+        productionRepository.getAll(),
+        salesRepository.getAll(),
+      ]);
+
+      const deserializedEntries = productionEntries.map(deserializeProductionEntry);
       setFlatList(deserializedEntries);
+
+      // Build set of article numbers from sales data
+      const salesArticles = new Set<string>();
+      for (const entry of salesEntries) {
+        if (entry.artikelnummer) {
+          salesArticles.add(entry.artikelnummer);
+        }
+      }
+      setSalesArticleNumbers(salesArticles);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Fehler beim Laden der Daten';
       setError(errorMessage);
-      console.error('Error fetching production data:', err);
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
@@ -491,10 +668,10 @@ export function useProductionHierarchy(
     fetchData();
   }, [fetchData]);
 
-  // Build hierarchy from flat list
+  // Build hierarchy from flat list (using sales data for Verkaufsartikel detection)
   const fullHierarchy = useMemo(() => {
-    return buildHierarchy(flatList);
-  }, [flatList]);
+    return buildHierarchy(flatList, salesArticleNumbers);
+  }, [flatList, salesArticleNumbers]);
 
   // Filter out completely finished projects/articles if requested
   const hierarchy = useMemo(() => {

@@ -1,7 +1,9 @@
 /**
  * Force-Directed Tree Visualization
- * Shows project hierarchy as an interactive force-directed graph
- * Hierarchy: Project → Articles → PAs → Operations
+ * Shows article hierarchy as an interactive force-directed graph
+ * Hierarchy: Verkaufsartikel (center) → Unterartikel + PAs → Operations
+ * Verkaufsartikel = Article with NO HauptPaNummer (main sales article)
+ * Unterartikel = Article WITH HauptPaNummer (sub-article)
  * Excludes articles with number "100" (Fracht und Verpackung)
  */
 
@@ -198,7 +200,8 @@ function filterByLevels(nodes: HierarchyNode[], visibility: LevelVisibility): Hi
 
 /**
  * Convert hierarchy to flat nodes and links for D3
- * Also calculates initial tree positions to reduce line crossings
+ * Supports multiple root nodes (separate trees) for project view
+ * Each root gets its own radial layout position
  */
 function hierarchyToD3(
   hierarchy: HierarchyNode[],
@@ -209,10 +212,7 @@ function hierarchyToD3(
   const nodes: D3Node[] = [];
   const links: D3Link[] = [];
 
-  // First, build a proper D3 hierarchy for tree layout
   if (hierarchy.length === 0) return { nodes, links };
-
-  const rootHierarchy = hierarchy[0]!;
 
   // Convert to D3 hierarchy format
   interface HierarchyData {
@@ -249,78 +249,91 @@ function hierarchyToD3(
     };
   }
 
-  const hierarchyData = toHierarchyData(rootHierarchy);
-  const root = d3.hierarchy(hierarchyData);
-
-  // Calculate max hours for each node type (for size scaling)
+  // Calculate max hours across ALL trees (for consistent sizing)
   const maxHoursByType: Record<string, number> = {};
-  root.each((d) => {
-    const type = d.data.type;
-    const hours = d.data.plannedHours;
+  function calcMaxHours(node: HierarchyNode) {
+    const type = node.type;
+    const hours = node.plannedHours;
     if (!maxHoursByType[type] || hours > maxHoursByType[type]) {
       maxHoursByType[type] = hours;
     }
-  });
+    node.children.forEach(calcMaxHours);
+  }
+  hierarchy.forEach(calcMaxHours);
 
-  // Use radial tree layout for initial positions (works better for force-directed graphs)
-  const treeLayout = d3.tree<HierarchyData>()
-    .size([2 * Math.PI, Math.min(width, height) / 3])
-    .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
+  // Calculate positions for multiple trees
+  // Arrange roots in a grid pattern
+  const numTrees = hierarchy.length;
+  const cols = Math.ceil(Math.sqrt(numTrees));
+  const rows = Math.ceil(numTrees / cols);
+  const cellWidth = width / cols;
+  const cellHeight = height / rows;
+  const treeRadius = Math.min(cellWidth, cellHeight) / 3;
 
-  treeLayout(root);
+  hierarchy.forEach((rootHierarchy, treeIndex) => {
+    const col = treeIndex % cols;
+    const row = Math.floor(treeIndex / cols);
+    const centerX = cellWidth * (col + 0.5);
+    const centerY = cellHeight * (row + 0.5);
 
-  // Convert tree positions to Cartesian coordinates and create D3 nodes
-  root.each((d) => {
-    // Convert polar to Cartesian (radial layout)
-    const angle = d.x as number;
-    const radius = d.y as number;
-    const x = width / 2 + radius * Math.cos(angle - Math.PI / 2);
-    const y = height / 2 + radius * Math.sin(angle - Math.PI / 2);
+    const hierarchyData = toHierarchyData(rootHierarchy);
+    const root = d3.hierarchy(hierarchyData);
 
-    // Calculate size based on plannedHours
-    const nodeRadius = calculateNodeSize(
-      d.data.type,
-      d.data.plannedHours,
-      maxHoursByType[d.data.type] || 1
-    );
+    // Use radial tree layout for each tree
+    const treeLayout = d3.tree<HierarchyData>()
+      .size([2 * Math.PI, treeRadius])
+      .separation((a, b) => (a.parent === b.parent ? 1 : 2) / Math.max(a.depth, 1));
 
-    // Check if overdue: active, not completed, and end date is in the past
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const isOverdue = d.data.isActive &&
-                      !d.data.isCompleted &&
-                      d.data.endDate !== undefined &&
-                      d.data.endDate < today;
+    treeLayout(root);
 
-    const d3Node: D3Node = {
-      id: d.data.id,
-      name: d.data.name,
-      type: d.data.type,
-      radius: nodeRadius,
-      color: colors[d.data.type] || colors.operation,
-      plannedHours: d.data.plannedHours,
-      actualHours: d.data.actualHours,
-      completionPercentage: d.data.completionPercentage,
-      depth: d.depth,
-      // Additional info for tooltip
-      identifier: d.data.identifier,
-      articleNumber: d.data.articleNumber,
-      description: d.data.description,
-      isCompleted: d.data.isCompleted,
-      isOverdue,
-      // Set initial positions from tree layout
-      x,
-      y,
-    };
+    // Convert tree positions to Cartesian coordinates
+    root.each((d) => {
+      const angle = d.x as number;
+      const radius = d.y as number;
+      const x = centerX + radius * Math.cos(angle - Math.PI / 2);
+      const y = centerY + radius * Math.sin(angle - Math.PI / 2);
 
-    nodes.push(d3Node);
-  });
+      const nodeRadius = calculateNodeSize(
+        d.data.type,
+        d.data.plannedHours,
+        maxHoursByType[d.data.type] || 1
+      );
 
-  // Create links from parent-child relationships
-  root.links().forEach((link) => {
-    links.push({
-      source: link.source.data.id,
-      target: link.target.data.id,
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const isOverdue = d.data.isActive &&
+                        !d.data.isCompleted &&
+                        d.data.endDate !== undefined &&
+                        d.data.endDate < today;
+
+      const d3Node: D3Node = {
+        id: d.data.id,
+        name: d.data.name,
+        type: d.data.type,
+        radius: nodeRadius,
+        color: colors[d.data.type] || colors.operation,
+        plannedHours: d.data.plannedHours,
+        actualHours: d.data.actualHours,
+        completionPercentage: d.data.completionPercentage,
+        depth: d.depth,
+        identifier: d.data.identifier,
+        articleNumber: d.data.articleNumber,
+        description: d.data.description,
+        isCompleted: d.data.isCompleted,
+        isOverdue,
+        x,
+        y,
+      };
+
+      nodes.push(d3Node);
+    });
+
+    // Create links only within this tree (no cross-tree links)
+    root.links().forEach((link) => {
+      links.push({
+        source: link.source.data.id,
+        target: link.target.data.id,
+      });
     });
   });
 
@@ -343,12 +356,18 @@ export default function ForceTreeView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const simulationRef = useRef<d3.Simulation<D3Node, D3Link> | null>(null);
 
+  // Selection mode: either a project (shows all its Verkaufsartikel) or a single article
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [selectedVerkaufsartikel, setSelectedVerkaufsartikel] = useState<string | null>(null);
   const [hoveredNode, setHoveredNode] = useState<D3Node | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
-  // Level visibility toggles (PAs and operations collapsed by default)
-  const [showArticles, setShowArticles] = useState(true);
+  // Level visibility toggles
+  // Verkaufsartikel is ALWAYS center
+  // showUnterartikel: shows Unterartikel (sub-articles) + PAs at first level
+  // showPAs: shows PAs under Unterartikel
+  // showOperations: shows operations under PAs
+  const [showUnterartikel, setShowUnterartikel] = useState(true);
   const [showPAs, setShowPAs] = useState(false);
   const [showOperations, setShowOperations] = useState(false);
 
@@ -394,27 +413,27 @@ export default function ForceTreeView() {
   }, [isFullscreen]);
 
   // Expand all helper
-  const isAllExpanded = showArticles && showPAs && showOperations;
+  const isAllExpanded = showUnterartikel && showPAs && showOperations;
   const handleExpandAll = (expand: boolean) => {
-    setShowArticles(expand);
+    setShowUnterartikel(expand);
     setShowPAs(expand);
     setShowOperations(expand);
   };
 
   // Track previous level states for auto-fit
-  const prevLevelsRef = useRef({ showArticles, showPAs, showOperations });
+  const prevLevelsRef = useRef({ showUnterartikel, showPAs, showOperations });
   const fitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auto fit-to-view when levels change
   useEffect(() => {
     const prevLevels = prevLevelsRef.current;
     const levelsChanged =
-      prevLevels.showArticles !== showArticles ||
+      prevLevels.showUnterartikel !== showUnterartikel ||
       prevLevels.showPAs !== showPAs ||
       prevLevels.showOperations !== showOperations;
 
     if (levelsChanged) {
-      prevLevelsRef.current = { showArticles, showPAs, showOperations };
+      prevLevelsRef.current = { showUnterartikel, showPAs, showOperations };
 
       // Clear any pending fit timeout
       if (fitTimeoutRef.current) {
@@ -458,7 +477,7 @@ export default function ForceTreeView() {
         clearTimeout(fitTimeoutRef.current);
       }
     };
-  }, [showArticles, showPAs, showOperations]);
+  }, [showUnterartikel, showPAs, showOperations]);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -475,102 +494,120 @@ export default function ForceTreeView() {
   }, [hierarchy]);
 
   // Get list of active projects for dropdown
-  const projects = useMemo(() => {
+  const projectList = useMemo(() => {
     return filteredHierarchy
       .filter(node => node.type === 'project' && node.isActive)
-      .map(node => ({
-        id: node.id,
-        name: node.name,
-        identifier: node.identifier,
-      }));
+      .map(project => ({
+        id: project.id,
+        name: project.name,
+        identifier: project.identifier,
+        articleCount: project.children.filter(c => c.type === 'article' && c.isMainArticle === true && c.identifier !== '100').length,
+      }))
+      .filter(p => p.articleCount > 0); // Only show projects with Verkaufsartikel
   }, [filteredHierarchy]);
 
-  // Search results - find matching projects and articles
-  const searchResults = useMemo(() => {
-    if (!searchQuery || searchQuery.length < 1) return [];
-
-    const query = searchQuery.toLowerCase();
-    const results: Array<{ id: string; name: string; type: 'project' | 'article'; identifier: string; projectId?: string }> = [];
+  // Get list of Verkaufsartikel (main articles) for dropdown
+  // Verkaufsartikel = articles with isMainArticle=true, excluding "100"
+  const verkaufsartikelList = useMemo(() => {
+    const result: Array<{ id: string; name: string; identifier: string; projectName: string; projectId: string }> = [];
 
     filteredHierarchy
       .filter(node => node.type === 'project' && node.isActive)
       .forEach(project => {
-        // Check if project matches
-        if (project.identifier.toLowerCase().includes(query) ||
-            project.name.toLowerCase().includes(query)) {
-          results.push({
-            id: project.id,
-            name: project.name,
-            type: 'project',
-            identifier: project.identifier,
-          });
-        }
-
-        // Check articles within this project
         project.children
-          .filter(child => child.type === 'article' && child.identifier !== '100')
+          .filter(child =>
+            child.type === 'article' &&
+            child.identifier !== '100' &&
+            child.isMainArticle === true
+          )
           .forEach(article => {
-            if (article.identifier.toLowerCase().includes(query) ||
-                article.name.toLowerCase().includes(query)) {
-              results.push({
-                id: article.id,
-                name: article.name,
-                type: 'article',
-                identifier: article.identifier,
-                projectId: project.id,
-              });
-            }
+            result.push({
+              id: article.id,
+              name: article.name,
+              identifier: article.identifier,
+              projectName: project.name.replace('Projekt ', ''),
+              projectId: project.id,
+            });
           });
       });
 
-    return results.slice(0, 10); // Limit to 10 results
-  }, [filteredHierarchy, searchQuery]);
+    return result;
+  }, [filteredHierarchy]);
 
-  // Get selected project's hierarchy with level filtering
-  // Center logic:
-  // - If only 1 Verkaufsartikel (isMainArticle=true), that article is center
-  // - If multiple Verkaufsartikel, project is center with Verkaufsartikel as first level
+  // Search results - find matching Verkaufsartikel
+  const searchResults = useMemo(() => {
+    if (!searchQuery || searchQuery.length < 1) return [];
+
+    const query = searchQuery.toLowerCase();
+
+    return verkaufsartikelList
+      .filter(article =>
+        article.identifier.toLowerCase().includes(query) ||
+        article.name.toLowerCase().includes(query) ||
+        article.projectName.toLowerCase().includes(query)
+      )
+      .slice(0, 10);
+  }, [verkaufsartikelList, searchQuery]);
+
+  // Get selected hierarchy with level filtering
+  // Mode 1: Single Verkaufsartikel selected → show that article as center
+  // Mode 2: Project selected → show ALL Verkaufsartikel of that project (separate trees)
   const selectedHierarchy = useMemo(() => {
-    if (!selectedProject) return [];
-    const project = filteredHierarchy.find(p => p.id === selectedProject);
-    if (!project) return [];
+    const visibility: LevelVisibility = {
+      showArticles: showUnterartikel,
+      showPAs,
+      showOperations,
+      hideCompleted
+    };
 
-    // Get Verkaufsartikel (main articles, excluding article 100)
-    const mainArticles = project.children.filter(
-      c => c.type === 'article' && c.identifier !== '100' && c.isMainArticle === true
-    );
-
-    // If only 1 Verkaufsartikel, use that as the center/root
-    if (mainArticles.length === 1) {
-      const singleMainArticle = mainArticles[0]!;
-      // When article is root, showArticles toggle is irrelevant (article IS the root)
-      // showPAs controls PAs (children of article), showOperations controls operations
-      const visibility: LevelVisibility = { showArticles: true, showPAs, showOperations, hideCompleted };
-      return filterByLevels([singleMainArticle], visibility);
+    // Mode 1: Single article selected
+    if (selectedVerkaufsartikel && !selectedProject) {
+      for (const project of filteredHierarchy) {
+        for (const article of project.children) {
+          if (article.id === selectedVerkaufsartikel) {
+            return filterByLevels([article], visibility);
+          }
+        }
+      }
+      return [];
     }
 
-    // Multiple Verkaufsartikel (or none): project is center, articles are first level
-    const visibility: LevelVisibility = { showArticles, showPAs, showOperations, hideCompleted };
-    return filterByLevels([project], visibility);
-  }, [filteredHierarchy, selectedProject, showArticles, showPAs, showOperations, hideCompleted]);
+    // Mode 2: Project selected - return all Verkaufsartikel of that project
+    if (selectedProject) {
+      const project = filteredHierarchy.find(p => p.id === selectedProject);
+      if (project) {
+        const verkaufsartikel = project.children.filter(
+          c => c.type === 'article' && c.isMainArticle === true && c.identifier !== '100'
+        );
+        // Apply level filtering to each article
+        return verkaufsartikel
+          .map(article => filterByLevels([article], visibility)[0])
+          .filter((node): node is HierarchyNode => node !== undefined);
+      }
+      return [];
+    }
 
-  // Check if we're in single-article mode (Verkaufsartikel is center instead of project)
-  const isSingleArticleMode = useMemo(() => {
-    if (!selectedProject) return false;
-    const project = filteredHierarchy.find(p => p.id === selectedProject);
-    if (!project) return false;
-    const mainArticles = project.children.filter(
-      c => c.type === 'article' && c.identifier !== '100' && c.isMainArticle === true
-    );
-    return mainArticles.length === 1;
-  }, [filteredHierarchy, selectedProject]);
+    // Default: show first article if available
+    const firstArticle = verkaufsartikelList[0];
+    if (firstArticle) {
+      for (const project of filteredHierarchy) {
+        for (const article of project.children) {
+          if (article.id === firstArticle.id) {
+            return filterByLevels([article], visibility);
+          }
+        }
+      }
+    }
 
-  // Auto-select first project
+    return [];
+  }, [filteredHierarchy, selectedVerkaufsartikel, selectedProject, verkaufsartikelList, showUnterartikel, showPAs, showOperations, hideCompleted]);
+
+  // Auto-select first Verkaufsartikel only when no project is selected
   useEffect(() => {
-    if (projects.length > 0 && !selectedProject) {
-      setSelectedProject(projects[0]!.id);
+    if (!selectedProject && verkaufsartikelList.length > 0 && !selectedVerkaufsartikel) {
+      setSelectedVerkaufsartikel(verkaufsartikelList[0]!.id);
     }
-  }, [projects, selectedProject]);
+  }, [verkaufsartikelList, selectedVerkaufsartikel, selectedProject]);
 
   // D3 Force Simulation
   useEffect(() => {
@@ -762,19 +799,17 @@ export default function ForceTreeView() {
         event.stopPropagation();
 
         // Expand the next level based on current node type
-        if (d.type === 'project') {
-          // Project → expand articles
-          if (!showArticles) setShowArticles(true);
-        } else if (d.type === 'article') {
-          // Article → expand PAs
+        // Center is always Verkaufsartikel, first level is Unterartikel + PAs
+        if (d.type === 'article') {
+          // Article (center or Unterartikel) → expand PAs
           if (!showPAs) {
-            setShowArticles(true);
+            setShowUnterartikel(true);
             setShowPAs(true);
           }
         } else if (d.type === 'pa' || d.type === 'mainPA') {
           // PA → expand operations
           if (!showOperations) {
-            setShowArticles(true);
+            setShowUnterartikel(true);
             setShowPAs(true);
             setShowOperations(true);
           }
@@ -787,8 +822,8 @@ export default function ForceTreeView() {
 
         // Collapse the clicked level and all levels below
         if (d.type === 'article') {
-          // Collapse articles → also hides PAs and operations
-          setShowArticles(false);
+          // Collapse Unterartikel → also hides PAs and operations
+          setShowUnterartikel(false);
           setShowPAs(false);
           setShowOperations(false);
         } else if (d.type === 'pa' || d.type === 'mainPA') {
@@ -801,8 +836,8 @@ export default function ForceTreeView() {
         }
       });
 
-    // Add labels only to project nodes
-    node.filter(d => d.type === 'project')
+    // Add labels to center node (first article = Verkaufsartikel) and depth 0 nodes
+    node.filter(d => d.depth === 0)
       .append('text')
       .attr('dy', d => d.radius + 14)
       .attr('text-anchor', 'middle')
@@ -810,7 +845,7 @@ export default function ForceTreeView() {
       .attr('font-weight', 600)
       .attr('fill', isDark ? '#a3a3a3' : '#525252')
       .text(d => {
-        const name = d.name.replace(/^Projekt /, '');
+        const name = d.name.replace(/^(Projekt |Artikel )/, '');
         return name.length > 15 ? name.substring(0, 12) + '...' : name;
       });
 
@@ -870,7 +905,7 @@ export default function ForceTreeView() {
             Force-Directed Tree
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Interaktive Projektstruktur-Visualisierung
+            Interaktive Artikelstruktur-Visualisierung (Verkaufsartikel → Unterartikel → PAs → Arbeitsgänge)
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={refresh}>
@@ -897,7 +932,7 @@ export default function ForceTreeView() {
                   }}
                   onFocus={() => setShowSearchResults(true)}
                   onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
-                  placeholder="Projekt/Artikel suchen..."
+                  placeholder="Verkaufsartikel suchen..."
                   className="w-48 px-3 py-1.5 rounded-[var(--radius-chip)] bg-card-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-mint)]"
                 />
                 {searchQuery && (
@@ -921,29 +956,25 @@ export default function ForceTreeView() {
                       key={result.id}
                       className="w-full px-3 py-2 text-left hover:bg-muted transition-colors flex items-center gap-2 border-b border-border last:border-b-0"
                       onClick={() => {
-                        if (result.type === 'project') {
-                          setSelectedProject(result.id);
-                        } else if (result.projectId) {
-                          setSelectedProject(result.projectId);
-                        }
+                        setSelectedVerkaufsartikel(result.id);
                         setSearchQuery('');
                         setShowSearchResults(false);
                       }}
                     >
                       <div
                         className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: result.type === 'project' ? COLORS.project : COLORS.article }}
+                        style={{ backgroundColor: COLORS.article }}
                       />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-foreground truncate">
                           {result.identifier}
                         </div>
                         <div className="text-xs text-muted-foreground truncate">
-                          {result.name.replace(/^(Projekt |Artikel )/, '')}
+                          {result.name.replace(/^Artikel /, '')} ({result.projectName})
                         </div>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {result.type === 'project' ? 'Projekt' : 'Artikel'}
+                        Artikel
                       </span>
                     </button>
                   ))}
@@ -956,16 +987,43 @@ export default function ForceTreeView() {
               <label className="text-sm font-medium text-muted-foreground">Projekt:</label>
               <select
                 value={selectedProject || ''}
-                onChange={(e) => setSelectedProject(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value) {
+                    setSelectedProject(value);
+                    setSelectedVerkaufsartikel(null); // Clear single article selection
+                  } else {
+                    setSelectedProject(null);
+                  }
+                }}
                 className="px-3 py-1.5 rounded-[var(--radius-chip)] bg-card-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-mint)]"
               >
-                {projects.map(p => (
+                <option value="">-- Einzelartikel --</option>
+                {projectList.map(p => (
                   <option key={p.id} value={p.id}>
-                    {p.identifier} - {p.name.replace('Projekt ', '')}
+                    {p.identifier} ({p.articleCount} Artikel)
                   </option>
                 ))}
               </select>
             </div>
+
+            {/* Verkaufsartikel Selector (only when no project selected) */}
+            {!selectedProject && (
+              <div className="flex items-center gap-2 border-l border-border pl-4">
+                <label className="text-sm font-medium text-muted-foreground">Artikel:</label>
+                <select
+                  value={selectedVerkaufsartikel || ''}
+                  onChange={(e) => setSelectedVerkaufsartikel(e.target.value)}
+                  className="px-3 py-1.5 rounded-[var(--radius-chip)] bg-card-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-mint)]"
+                >
+                  {verkaufsartikelList.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {a.identifier} - {a.name.replace('Artikel ', '')} ({a.projectName})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Global Toggles */}
             <div className="flex items-center gap-4 border-l border-border pl-4">
@@ -984,23 +1042,21 @@ export default function ForceTreeView() {
             {/* Level Toggles */}
             <div className="flex items-center gap-4 border-l border-border pl-4">
               <ToggleSwitch
-                checked={showArticles}
-                onChange={(e) => setShowArticles(e.target.checked)}
-                label="Artikel"
-                disabled={isSingleArticleMode}
-                title={isSingleArticleMode ? 'Nur 1 Artikel - automatisch im Zentrum' : undefined}
+                checked={showUnterartikel}
+                onChange={(e) => setShowUnterartikel(e.target.checked)}
+                label="Unterartikel"
               />
               <ToggleSwitch
                 checked={showPAs}
                 onChange={(e) => setShowPAs(e.target.checked)}
                 label="PAs"
-                disabled={!showArticles && !isSingleArticleMode}
+                disabled={!showUnterartikel}
               />
               <ToggleSwitch
                 checked={showOperations}
                 onChange={(e) => setShowOperations(e.target.checked)}
                 label="Arbeitsgänge"
-                disabled={(!showArticles && !isSingleArticleMode) || !showPAs}
+                disabled={!showUnterartikel || !showPAs}
               />
             </div>
 
@@ -1046,22 +1102,50 @@ export default function ForceTreeView() {
       <Card className={isFullscreen ? 'fixed inset-0 z-50 rounded-none' : ''}>
         <CardHeader className={`py-3 border-b border-border ${isFullscreen ? 'flex flex-row items-center justify-between gap-4' : ''}`}>
           <CardTitle className="text-base flex-shrink-0">
-            {selectedHierarchy.length > 0 ? selectedHierarchy[0]!.name : 'Kein Projekt ausgewählt'}
+            {selectedProject
+              ? `Projekt ${projectList.find(p => p.id === selectedProject)?.identifier || ''} (${selectedHierarchy.length} Artikel)`
+              : selectedHierarchy.length > 0
+                ? selectedHierarchy[0]!.name
+                : 'Kein Artikel ausgewählt'}
           </CardTitle>
           {isFullscreen && (
             <div className="flex items-center gap-4 flex-1 justify-end">
               {/* Project Selector */}
               <select
                 value={selectedProject || ''}
-                onChange={(e) => setSelectedProject(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value) {
+                    setSelectedProject(value);
+                    setSelectedVerkaufsartikel(null);
+                  } else {
+                    setSelectedProject(null);
+                  }
+                }}
                 className="px-3 py-1.5 rounded-[var(--radius-chip)] bg-card-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-mint)]"
               >
-                {projects.map(p => (
+                <option value="">-- Einzelartikel --</option>
+                {projectList.map(p => (
                   <option key={p.id} value={p.id}>
-                    {p.identifier} - {p.name.replace('Projekt ', '')}
+                    {p.identifier} ({p.articleCount} Art.)
                   </option>
                 ))}
               </select>
+
+              {/* Verkaufsartikel Selector (only when no project selected) */}
+              {!selectedProject && (
+                <select
+                  value={selectedVerkaufsartikel || ''}
+                  onChange={(e) => setSelectedVerkaufsartikel(e.target.value)}
+                  className="px-3 py-1.5 rounded-[var(--radius-chip)] bg-card-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-mint)]"
+                >
+                  {verkaufsartikelList.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {a.identifier} - {a.name.replace('Artikel ', '')} ({a.projectName})
+                    </option>
+                  ))}
+                </select>
+              )}
 
               {/* Toggles */}
               <div className="flex items-center gap-3">
@@ -1080,22 +1164,21 @@ export default function ForceTreeView() {
               {/* Level Toggles */}
               <div className="flex items-center gap-3 border-l border-border pl-4">
                 <ToggleSwitch
-                  checked={showArticles}
-                  onChange={(e) => setShowArticles(e.target.checked)}
-                  label="Artikel"
-                  disabled={isSingleArticleMode}
+                  checked={showUnterartikel}
+                  onChange={(e) => setShowUnterartikel(e.target.checked)}
+                  label="Unterart."
                 />
                 <ToggleSwitch
                   checked={showPAs}
                   onChange={(e) => setShowPAs(e.target.checked)}
                   label="PAs"
-                  disabled={!showArticles && !isSingleArticleMode}
+                  disabled={!showUnterartikel}
                 />
                 <ToggleSwitch
                   checked={showOperations}
                   onChange={(e) => setShowOperations(e.target.checked)}
                   label="AGs"
-                  disabled={(!showArticles && !isSingleArticleMode) || !showPAs}
+                  disabled={!showUnterartikel || !showPAs}
                 />
               </div>
 
@@ -1196,7 +1279,7 @@ export default function ForceTreeView() {
             {/* Empty State */}
             {selectedHierarchy.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                Kein Projekt ausgewählt oder keine Daten verfügbar
+                Kein Verkaufsartikel ausgewählt oder keine Daten verfügbar
               </div>
             )}
           </div>

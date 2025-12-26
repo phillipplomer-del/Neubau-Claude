@@ -12,6 +12,8 @@
   "dependencies": {
     "@tanstack/react-table": "^8.20.5",
     "@tanstack/react-virtual": "^3.13.13",
+    "@types/d3": "^7.4.3",
+    "d3": "^7.9.0",
     "date-fns": "^4.1.0",
     "firebase": "^12.7.0",
     "frappe-gantt": "^0.6.1",
