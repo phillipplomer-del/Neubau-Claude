@@ -611,6 +611,47 @@ export default function ForceTimelineView() {
     });
   }, [verkaufsartikelWithDates, selectedWeek, selectedMonth, timeUnit]);
 
+  // DEBUG: Log counts for verification
+  useEffect(() => {
+    const salesWithDeliveryDate = salesData.filter(e => e.deliveryDate).length;
+    const uniqueArtikelInSales = new Set(salesData.map(e => e.artikelnummer)).size;
+    const uniqueArtikelWithDate = deliveryDateMap.size;
+
+    // Count all Verkaufsartikel in hierarchy (active projects only)
+    let allVerkaufsartikel = 0;
+    let verkaufsartikelWithDeliveryDate = 0;
+    hierarchy
+      .filter(node => node.type === 'project' && node.isActive)
+      .forEach(project => {
+        project.children
+          .filter(child => child.type === 'article' && child.identifier !== '100' && child.isMainArticle === true)
+          .forEach(article => {
+            allVerkaufsartikel++;
+            if (deliveryDateMap.has(article.identifier)) {
+              verkaufsartikelWithDeliveryDate++;
+            }
+          });
+      });
+
+    console.group('🔍 Force Timeline - Datenanalyse');
+    console.log('Sales-Daten:');
+    console.log(`  - Gesamt Einträge: ${salesData.length}`);
+    console.log(`  - Mit Lieferdatum: ${salesWithDeliveryDate}`);
+    console.log(`  - Unique Artikelnummern: ${uniqueArtikelInSales}`);
+    console.log(`  - Unique Artikel mit Datum: ${uniqueArtikelWithDate}`);
+    console.log('');
+    console.log('Hierarchie (Produktion):');
+    console.log(`  - Projekte gesamt: ${hierarchy.length}`);
+    console.log(`  - Aktive Projekte: ${hierarchy.filter(n => n.type === 'project' && n.isActive).length}`);
+    console.log(`  - Verkaufsartikel (aktive Projekte): ${allVerkaufsartikel}`);
+    console.log(`  - Davon mit Lieferdatum: ${verkaufsartikelWithDeliveryDate}`);
+    console.log('');
+    console.log('Anzeige:');
+    console.log(`  - verkaufsartikelWithDates: ${verkaufsartikelWithDates.length}`);
+    console.log(`  - filteredArticles (${timeUnit}): ${filteredArticles.length}`);
+    console.groupEnd();
+  }, [salesData, hierarchy, deliveryDateMap, verkaufsartikelWithDates, filteredArticles, timeUnit]);
+
   // D3 Rendering with Lane-based Layout
   useEffect(() => {
     if (!svgRef.current || !containerRef.current) return;
