@@ -38,3 +38,21 @@ Umfassende Modernisierung der Import-Seite (`/import`), um das Design an die "Ga
 *   `lucide-react` (Icons: `Trash2`, `CloudUpload`, `CheckCircle`, `AlertTriangle`)
 
 ---
+
+## Template für zukünftige Einträge
+
+Bitte das folgende Format nutzen, um Konsistenz zu wahren:
+
+```markdown
+## Session: DD.MM.YYYY - [Titel der Änderung]
+
+**Branch:** [branch-name]
+**Agent:** [Name des AI-Assistenten]
+
+### Zusammenfassung
+[Kurze Beschreibung der Ziele und Ergebnisse]
+
+### Technische Details
+*   **[Datei/Pfad]**: [Beschreibung der Änderung]
+*   **[Datei/Pfad]**: [Beschreibung der Änderung]
+```
