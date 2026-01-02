@@ -1,421 +1,353 @@
 /**
  * Landing Page - PVCS Prism
- * Visual concept: Light Beam → Prism → Force Tree (data visualization)
- * Dark mode as default, modern minimal design
+ * Visual concept: "Dark Side of the Moon" - Animated Prism Data Flow
+ * CORRECTIONS:
+ * - Spread: +/- 30 Degree Cone.
+ * - Reach: Extended to near screen edge.
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Sun, Moon } from 'lucide-react';
 import * as d3 from 'd3';
-import { useDarkMode } from '@/hooks/useDarkMode';
-import { useUserContext } from '@/contexts/UserContext';
+import { Sun, Moon } from 'lucide-react';
 import LoginModal from '@/components/auth/LoginModal';
 
-// Force Tree Node interface
-interface TreeNode extends d3.SimulationNodeDatum {
+interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
-  depth: number;
-  color: string;
+  group: number;
   radius: number;
-  angle?: number; // For fan-out positioning
-}
-
-interface TreeLink extends d3.SimulationLinkDatum<TreeNode> {
-  source: TreeNode | string;
-  target: TreeNode | string;
   color: string;
+  isLeaf?: boolean;
+  delay?: number;
 }
 
-// Rainbow spectrum colors
-const RAINBOW_COLORS = [
-  '#FF3333', // Red
-  '#FF8833', // Orange
-  '#FFDD33', // Yellow
-  '#33FF55', // Green
-  '#33DDFF', // Cyan
-  '#3388FF', // Blue
-  '#AA33FF', // Violet
+interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
+  source: string | GraphNode;
+  target: string | GraphNode;
+  value: number;
+  delay?: number;
+}
+
+const SPECTRUM_COLORS = [
+  'hsla(0, 100%, 75%, 0.85)',
+  'hsla(30, 100%, 75%, 0.85)',
+  'hsla(60, 100%, 75%, 0.85)',
+  'hsla(120, 100%, 75%, 0.85)',
+  'hsla(200, 100%, 75%, 0.85)',
+  'hsla(270, 100%, 75%, 0.85)',
 ];
 
-// Generate tree data that fans out from prism
-function generatePrismTree(): { nodes: TreeNode[]; links: TreeLink[] } {
-  const nodes: TreeNode[] = [];
-  const links: TreeLink[] = [];
+function generatePrismData() {
+  const nodes: GraphNode[] = [];
+  const links: GraphLink[] = [];
+  let globalDelay = 1000;
 
-  // Root node (exit point of prism)
-  nodes.push({ id: 'root', depth: 0, color: '#FFFFFF', radius: 0, angle: 0 });
+  // 1. ROOTS 
+  SPECTRUM_COLORS.forEach((color, i) => {
+    nodes.push({
+      id: `root-${i}`,
+      group: i,
+      radius: 3,
+      color: color,
+      fx: 0,
+      fy: 0,
+      delay: globalDelay
+    });
+  });
 
-  // Generate 7 branches for 7 rainbow colors - fan out evenly
-  const branches = 7;
-  const fanAngle = 120; // Total fan angle in degrees
-  const startAngle = -fanAngle / 2;
+  // 2. BRANCHES (Rich Tree Structure)
+  SPECTRUM_COLORS.forEach((color, i) => {
+    const rootId = `root-${i}`;
 
-  for (let i = 0; i < branches; i++) {
-    const branchId = `b${i}`;
-    const color = RAINBOW_COLORS[i];
-    const angle = startAngle + (i / (branches - 1)) * fanAngle;
+    // Level 1: Main branches 
+    const level1Count = 2 + Math.floor(Math.random() * 3);
+    const level1Ids: string[] = [];
 
-    nodes.push({ id: branchId, depth: 1, color, radius: 5, angle });
-    links.push({ source: 'root', target: branchId, color });
-
-    // Sub-branches - same color as parent
-    const subBranches = 2 + Math.floor(Math.random() * 2);
-    for (let j = 0; j < subBranches; j++) {
-      const subId = `b${i}-${j}`;
-      const subAngle = angle + (j - (subBranches - 1) / 2) * 8;
-      nodes.push({ id: subId, depth: 2, color, radius: 4, angle: subAngle });
-      links.push({ source: branchId, target: subId, color });
-
-      // Leaf nodes
-      const leaves = 2 + Math.floor(Math.random() * 2);
-      for (let k = 0; k < leaves; k++) {
-        const leafId = `b${i}-${j}-${k}`;
-        const leafAngle = subAngle + (k - (leaves - 1) / 2) * 5;
-        nodes.push({ id: leafId, depth: 3, color, radius: 3, angle: leafAngle });
-        links.push({ source: subId, target: leafId, color });
-      }
+    for (let j = 0; j < level1Count; j++) {
+      const id = `l1-${i}-${j}`;
+      const delay = globalDelay + 150 + Math.random() * 300;
+      nodes.push({ id, group: i, radius: 4, color, delay });
+      links.push({ source: rootId, target: id, value: 2.5, delay });
+      level1Ids.push(id);
     }
-  }
+
+    // Level 2: Sub-branches
+    const level2Ids: string[] = [];
+    level1Ids.forEach((parentId) => {
+      const count = 2 + Math.floor(Math.random() * 3);
+      for (let k = 0; k < count; k++) {
+        const id = `l2-${parentId}-${k}`;
+        const delay = globalDelay + 400 + Math.random() * 400;
+        nodes.push({ id, group: i, radius: 2.5, color, delay });
+        links.push({ source: parentId, target: id, value: 1, delay });
+        level2Ids.push(id);
+      }
+    });
+
+    // Level 3: Leaves (Tips) 
+    level2Ids.forEach((parentId) => {
+      const count = 2 + Math.floor(Math.random() * 2);
+      for (let m = 0; m < count; m++) {
+        const id = `leaf-${parentId}-${m}`;
+        const delay = globalDelay + 700 + Math.random() * 500;
+        nodes.push({ id, group: i, radius: 1.5, color, isLeaf: true, delay });
+        links.push({ source: parentId, target: id, value: 0.5, delay });
+      }
+    });
+  });
 
   return { nodes, links };
 }
 
 export default function Landing() {
-  const { isDark, toggle } = useDarkMode();
-  const { isLoggedIn } = useUserContext();
+  const [isDark, setIsDark] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add('dark');
+    localStorage.setItem('darkMode', 'true');
+    setIsDark(true);
+  }, []);
+
+  const toggle = () => {
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.remove('dark');
+      localStorage.setItem('darkMode', 'false');
+      setIsDark(false);
+    } else {
+      root.classList.add('dark');
+      localStorage.setItem('darkMode', 'true');
+      setIsDark(true);
+    }
+  };
+
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Ensure dark mode on landing page (modern default)
-  useEffect(() => {
-    const root = document.documentElement;
-    if (!root.classList.contains('dark')) {
-      root.classList.add('dark');
-      localStorage.setItem('darkMode', 'true');
-    }
-  }, []);
-
-  // Handle login success
-  useEffect(() => {
-    if (isLoggedIn && showLogin) {
-      setShowLogin(false);
-      window.location.href = '/';
-    }
-  }, [isLoggedIn, showLogin]);
-
-  // D3 Force Tree Animation - integrated with beam and prism
   useEffect(() => {
     if (!svgRef.current || !containerRef.current) return;
 
-    const svg = d3.select(svgRef.current);
-    const container = containerRef.current;
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    try {
+      const width = containerRef.current.clientWidth || window.innerWidth;
+      const height = containerRef.current.clientHeight || window.innerHeight;
+      const svg = d3.select(svgRef.current);
+      svg.selectAll('*').remove();
 
-    svg.selectAll('*').remove();
+      const defs = svg.append('defs');
 
-    // Key positions - prism centered more to the left
-    const prismX = width * 0.25;
-    const prismY = height * 0.5;
-    const prismSize = Math.min(height * 0.4, 180);
-    // Tree starts exactly at prism's right vertex
-    const prismRightX = prismX + prismSize * 0.5;
-    const treeStartX = prismRightX;
+      // Crisp Glow
+      const filter = defs.append('filter').attr('id', 'neon-glow').attr('filterUnits', 'userSpaceOnUse');
+      filter.append('feGaussianBlur').attr('stdDeviation', '2.5').attr('result', 'coloredBlur');
+      const feMerge = filter.append('feMerge');
+      feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+      feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
 
-    // Create defs for gradients
-    const defs = svg.append('defs');
+      // Beam Gradient
+      const beamGrad = defs.append('linearGradient').attr('id', 'beam-grad')
+        .attr('x1', '0%').attr('y1', '0%').attr('x2', '100%').attr('y2', '0%');
+      beamGrad.append('stop').attr('offset', '0%').attr('stop-color', '#fff').attr('stop-opacity', 0);
+      beamGrad.append('stop').attr('offset', '20%').attr('stop-color', '#fff').attr('stop-opacity', 0.6);
+      beamGrad.append('stop').attr('offset', '100%').attr('stop-color', '#fff').attr('stop-opacity', 1);
 
-    // Beam gradient
-    defs.append('linearGradient')
-      .attr('id', 'beamGradient')
-      .attr('x1', '0%').attr('y1', '0%')
-      .attr('x2', '100%').attr('y2', '0%')
-      .selectAll('stop')
-      .data([
-        { offset: '0%', color: 'rgba(255,255,255,0)' },
-        { offset: '50%', color: 'rgba(255,255,255,0.6)' },
-        { offset: '100%', color: 'rgba(255,255,255,1)' },
-      ])
-      .enter().append('stop')
-      .attr('offset', d => d.offset)
-      .attr('stop-color', d => d.color);
+      const prismGrad = defs.append('linearGradient').attr('id', 'prism-grad')
+        .attr('x1', '0%').attr('y1', '100%').attr('x2', '50%').attr('y2', '0%');
+      prismGrad.append('stop').attr('offset', '0%').attr('stop-color', 'rgba(255,255,255,0.02)');
+      prismGrad.append('stop').attr('offset', '50%').attr('stop-color', 'rgba(255,255,255,0.1)');
+      prismGrad.append('stop').attr('offset', '100%').attr('stop-color', 'rgba(255,255,255,0.02)');
 
-    // Prism gradient (glass effect)
-    const prismGradient = defs.append('linearGradient')
-      .attr('id', 'prismGradient')
-      .attr('x1', '0%').attr('y1', '0%')
-      .attr('x2', '100%').attr('y2', '100%');
-    prismGradient.append('stop').attr('offset', '0%').attr('stop-color', 'rgba(255,255,255,0.15)');
-    prismGradient.append('stop').attr('offset', '50%').attr('stop-color', 'rgba(255,255,255,0.08)');
-    prismGradient.append('stop').attr('offset', '100%').attr('stop-color', 'rgba(255,255,255,0.12)');
 
-    // Rainbow gradient for prism edge
-    const rainbowGradient = defs.append('linearGradient')
-      .attr('id', 'rainbowGradient')
-      .attr('x1', '0%').attr('y1', '0%')
-      .attr('x2', '0%').attr('y2', '100%');
-    RAINBOW_COLORS.forEach((color, i) => {
-      rainbowGradient.append('stop')
-        .attr('offset', `${(i / (RAINBOW_COLORS.length - 1)) * 100}%`)
-        .attr('stop-color', color);
-    });
+      // --- GEOMETRY ---
+      const prismSize = 300;
+      const prismX = width * 0.42;
+      const prismY = height * 0.5;
 
-    // Glow filter
-    const filter = defs.append('filter').attr('id', 'glow');
-    filter.append('feGaussianBlur').attr('stdDeviation', '3').attr('result', 'coloredBlur');
-    const feMerge = filter.append('feMerge');
-    feMerge.append('feMergeNode').attr('in', 'coloredBlur');
-    feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+      const h = prismSize * (Math.sqrt(3) / 2);
+      const pTop = { x: prismX, y: prismY - h * 0.5 };
+      const pLeft = { x: prismX - prismSize * 0.5, y: prismY + h * 0.5 };
+      const pRight = { x: prismX + prismSize * 0.5, y: prismY + h * 0.5 };
 
-    // Prism vertices
-    const prismLeft = prismX - prismSize * 0.5;
-    const prismTop = prismY - prismSize * 0.55;
-    const prismBottom = prismY + prismSize * 0.55;
+      // 1. BEAM ENTRY
+      const entryT = 0.6;
+      const entryPoint = {
+        x: pTop.x + (pLeft.x - pTop.x) * entryT,
+        y: pTop.y + (pLeft.y - pTop.y) * entryT
+      };
+      const beamStart = { x: 0, y: height * 0.65 };
 
-    // 1. Draw Light Beam (from left edge to prism's left side)
-    svg.append('line')
-      .attr('x1', 0)
-      .attr('y1', prismY)
-      .attr('x2', prismLeft)
-      .attr('y2', prismY)
-      .attr('stroke', 'url(#beamGradient)')
-      .attr('stroke-width', 5)
-      .attr('filter', 'url(#glow)');
+      // 2. BEAM EXIT (Right Face)
+      const slopeInv = (pRight.x - pTop.x) / (pRight.y - pTop.y);
+      const exitPointCenter = {
+        x: pTop.x + (entryPoint.y - pTop.y) * slopeInv,
+        y: entryPoint.y
+      };
 
-    // 2. Draw Prism (triangle pointing right)
-    const prismPoints = [
-      [prismLeft, prismTop],      // Top left
-      [prismLeft, prismBottom],   // Bottom left
-      [prismRightX, prismY],      // Right point (where tree starts)
-    ];
+      const spectrumHeight = 25;
+      const dxF = pRight.x - pTop.x;
+      const dyF = pRight.y - pTop.y;
+      const lenF = Math.sqrt(dxF * dxF + dyF * dyF);
+      const uxF = dxF / lenF;
+      const uyF = dyF / lenF;
 
-    // Prism outer glow
-    svg.append('polygon')
-      .attr('points', prismPoints.map(p => p.join(',')).join(' '))
-      .attr('fill', 'none')
-      .attr('stroke', 'rgba(255,255,255,0.15)')
-      .attr('stroke-width', 20)
-      .attr('filter', 'url(#glow)');
+      const specStart = { x: exitPointCenter.x - uxF * spectrumHeight / 2, y: exitPointCenter.y - uyF * spectrumHeight / 2 };
+      const specEnd = { x: exitPointCenter.x + uxF * spectrumHeight / 2, y: exitPointCenter.y + uyF * spectrumHeight / 2 };
 
-    // Prism fill
-    svg.append('polygon')
-      .attr('points', prismPoints.map(p => p.join(',')).join(' '))
-      .attr('fill', 'url(#prismGradient)')
-      .attr('stroke', 'rgba(255,255,255,0.4)')
-      .attr('stroke-width', 2);
+      // --- DRAWING LAYERS ---
 
-    // Inner highlight (glass refraction)
-    const innerOffset = prismSize * 0.08;
-    const innerPoints = [
-      [prismLeft + innerOffset, prismTop + innerOffset * 1.5],
-      [prismLeft + innerOffset, prismBottom - innerOffset * 1.5],
-      [prismRightX - innerOffset * 2, prismY],
-    ];
-    svg.append('polygon')
-      .attr('points', innerPoints.map(p => p.join(',')).join(' '))
-      .attr('fill', 'none')
-      .attr('stroke', 'rgba(255,255,255,0.1)')
-      .attr('stroke-width', 1);
+      const internalGroup = svg.append('g').attr('opacity', 0);
+      internalGroup.transition().delay(800).duration(400).attr('opacity', 1);
 
-    // Rainbow edge on right sides of prism (top edge)
-    svg.append('line')
-      .attr('x1', prismPoints[0][0])
-      .attr('y1', prismPoints[0][1])
-      .attr('x2', prismPoints[2][0])
-      .attr('y2', prismPoints[2][1])
-      .attr('stroke', 'url(#rainbowGradient)')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.6);
+      const refractionPoly = `M ${entryPoint.x},${entryPoint.y} L ${specStart.x},${specStart.y} L ${specEnd.x},${specEnd.y} Z`;
+      internalGroup.append('path')
+        .attr('d', refractionPoly)
+        .attr('fill', 'rgba(255,255,255,0.15)')
+        .attr('stroke', 'none');
 
-    // Rainbow edge (bottom edge)
-    svg.append('line')
-      .attr('x1', prismPoints[2][0])
-      .attr('y1', prismPoints[2][1])
-      .attr('x2', prismPoints[1][0])
-      .attr('y2', prismPoints[1][1])
-      .attr('stroke', 'url(#rainbowGradient)')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.6);
+      const prismBody = svg.append('path')
+        .attr('d', `M ${pTop.x} ${pTop.y} L ${pRight.x} ${pRight.y} L ${pLeft.x} ${pLeft.y} Z`)
+        .attr('fill', 'url(#prism-grad)')
+        .attr('stroke', 'rgba(255,255,255,0.15)')
+        .attr('stroke-width', 1);
 
-    // Draw initial rainbow rays from prism tip (before force tree connects)
-    const rayLength = 30;
-    RAINBOW_COLORS.forEach((color, i) => {
-      const angle = -60 + (i / (RAINBOW_COLORS.length - 1)) * 120;
-      const rad = (angle * Math.PI) / 180;
-      svg.append('line')
-        .attr('x1', prismRightX)
-        .attr('y1', prismY)
-        .attr('x2', prismRightX + Math.cos(rad) * rayLength)
-        .attr('y2', prismY + Math.sin(rad) * rayLength)
-        .attr('stroke', color)
+      const beamLine = svg.append('line')
+        .attr('x1', beamStart.x).attr('y1', beamStart.y)
+        .attr('x2', entryPoint.x).attr('y2', entryPoint.y)
+        .attr('stroke', 'url(#beam-grad)')
         .attr('stroke-width', 3)
-        .attr('stroke-opacity', 0.8)
-        .attr('filter', 'url(#glow)');
-    });
+        .attr('filter', 'url(#neon-glow)')
+        .attr('opacity', 0);
 
-    // 3. Draw Force Tree
-    const { nodes, links } = generatePrismTree();
+      const beamLen = Math.sqrt(Math.pow(entryPoint.x - beamStart.x, 2) + Math.pow(entryPoint.y - beamStart.y, 2));
+      beamLine.attr('stroke-dasharray', beamLen).attr('stroke-dashoffset', beamLen)
+        .transition().duration(800).ease(d3.easeLinear).attr('opacity', 0.9).attr('stroke-dashoffset', 0);
 
-    // Position root at prism exit
-    nodes[0].fx = treeStartX;
-    nodes[0].fy = prismY;
+      svg.append('circle').attr('cx', entryPoint.x).attr('cy', entryPoint.y).attr('r', 0)
+        .attr('fill', '#fff').attr('filter', 'url(#neon-glow)')
+        .transition().delay(750).duration(200).attr('r', 3);
 
-    // Set initial positions based on angles for fan effect
-    // Use remaining screen width for tree spread
-    const availableWidth = width - treeStartX - 50;
-    const depthDistance = [0, availableWidth * 0.3, availableWidth * 0.55, availableWidth * 0.8];
-    nodes.forEach(node => {
-      if (node.depth > 0 && node.angle !== undefined) {
-        const rad = (node.angle * Math.PI) / 180;
-        const dist = depthDistance[node.depth];
-        node.x = treeStartX + Math.cos(rad) * dist;
-        node.y = prismY + Math.sin(rad) * dist;
-      }
-    });
 
-    const simulation = d3.forceSimulation<TreeNode>(nodes)
-      .force('link', d3.forceLink<TreeNode, TreeLink>(links)
-        .id(d => d.id)
-        .distance(d => {
-          const target = d.target as TreeNode;
-          return availableWidth * 0.15 + target.depth * 15;
-        })
-        .strength(0.5)
-      )
-      .force('charge', d3.forceManyBody().strength(-40))
-      .force('x', d3.forceX(d => {
-        if (d.depth === 0) return treeStartX;
-        const rad = ((d.angle || 0) * Math.PI) / 180;
-        return treeStartX + Math.cos(rad) * depthDistance[d.depth];
-      }).strength(0.4))
-      .force('y', d3.forceY(d => {
-        if (d.depth === 0) return prismY;
-        const rad = ((d.angle || 0) * Math.PI) / 180;
-        return prismY + Math.sin(rad) * depthDistance[d.depth];
-      }).strength(0.4))
-      .force('collision', d3.forceCollide<TreeNode>().radius(d => d.radius + 3));
+      // 4. Force Tree (Exiting Right)
+      const { nodes, links } = generatePrismData();
+      const groups = SPECTRUM_COLORS.length;
 
-    // Draw links
-    const link = svg.append('g')
-      .selectAll('line')
-      .data(links)
-      .enter()
-      .append('line')
-      .attr('stroke', d => d.color)
-      .attr('stroke-width', 2)
-      .attr('stroke-opacity', 0.7)
-      .attr('filter', 'url(#glow)');
+      nodes.forEach(node => {
+        if (node.id.startsWith('root-')) {
+          const t = node.group / (groups - 1);
+          node.fx = specStart.x + (specEnd.x - specStart.x) * t;
+          node.fy = specStart.y + (specEnd.y - specStart.y) * t;
+          node.x = node.fx;
+          node.y = node.fy;
+        } else {
+          node.x = exitPointCenter.x + 10;
+          node.y = exitPointCenter.y;
+        }
+      });
 
-    // Draw nodes (skip root node - it's invisible)
-    const node = svg.append('g')
-      .selectAll('circle')
-      .data(nodes.filter(n => n.depth > 0))
-      .enter()
-      .append('circle')
-      .attr('r', d => d.radius)
-      .attr('fill', d => d.color)
-      .attr('fill-opacity', 0.9)
-      .attr('filter', 'url(#glow)');
+      // TAN(30 deg) ~= 0.577
+      const MAX_TAN = 0.577;
 
-    // Gentle pulsing animation
-    node.each(function(d, i) {
-      const circle = d3.select(this);
-      const delay = i * 30;
+      const simulation = d3.forceSimulation(nodes)
+        // INCREASED DISTANCE slightly to 28 for better reach
+        .force('link', d3.forceLink<GraphNode, GraphLink>(links).id(d => d.id).distance(28))
+        .force('charge', d3.forceManyBody().strength(-8))
+        .force('collide', d3.forceCollide(2))
+        .force('flow', alpha => {
+          nodes.forEach(d => {
+            if (d.fx === undefined) {
+              // MODERATE flow to reach end
+              d.vx = (d.vx || 0) + 0.6 * alpha;
 
-      function pulse() {
-        circle
-          .transition()
-          .delay(delay)
-          .duration(2000)
-          .attr('fill-opacity', 0.5)
-          .attr('r', d.radius * 0.8)
-          .transition()
-          .duration(2000)
-          .attr('fill-opacity', 0.9)
-          .attr('r', d.radius)
-          .on('end', pulse);
-      }
-      pulse();
-    });
+              const groupT = d.group / (groups - 1);
+              // SPREAD = +/- 25 degrees (keep inside 30)
+              const angle = (-25 + groupT * 50) * (Math.PI / 180);
 
-    simulation.on('tick', () => {
-      link
-        .attr('x1', d => (d.source as TreeNode).x || 0)
-        .attr('y1', d => (d.source as TreeNode).y || 0)
-        .attr('x2', d => (d.target as TreeNode).x || 0)
-        .attr('y2', d => (d.target as TreeNode).y || 0);
+              const speed = Math.sqrt(d.vx! * d.vx! + d.vy! * d.vy!) || 0.1;
+              const tvx = Math.cos(angle) * speed;
+              const tvy = Math.sin(angle) * speed;
 
-      node
-        .attr('cx', d => d.x || 0)
-        .attr('cy', d => d.y || 0);
-    });
+              d.vx = d.vx! * 0.9 + tvx * 0.1;
+              d.vy = d.vy! * 0.9 + tvy * 0.1;
+            }
+          });
+        });
 
-    return () => simulation.stop();
+      const linkPath = svg.append('g').selectAll('path')
+        .data(links).enter().append('path')
+        .attr('fill', 'none').attr('stroke-width', d => d.value * 0.5)
+        .attr('stroke', d => (d.source as GraphNode).color)
+        .attr('stroke-opacity', 0).style('mix-blend-mode', 'screen');
+
+      const nodeCircle = svg.append('g').selectAll('circle')
+        .data(nodes).enter().append('circle')
+        .attr('r', d => d.radius * 0.6).attr('fill', d => d.color)
+        .attr('fill-opacity', 0).style('mix-blend-mode', 'screen');
+
+      linkPath.transition().delay(d => d.delay || 1200).duration(800).attr('stroke-opacity', 0.8);
+      nodeCircle.transition().delay(d => d.delay || 1200).duration(800).attr('fill-opacity', 0.9);
+
+      simulation.on('tick', () => {
+        nodes.forEach(d => {
+          if (d.fx === undefined) {
+            if (d.x! < exitPointCenter.x) d.x = exitPointCenter.x + 1;
+            const dx = d.x! - exitPointCenter.x;
+            const dy = d.y! - exitPointCenter.y;
+            const maxDy = dx * MAX_TAN;
+
+            // Cone constraint
+            if (dy > maxDy) d.y = exitPointCenter.y + maxDy;
+            if (dy < -maxDy) d.y = exitPointCenter.y - maxDy;
+            // Screen bounds
+            if (d.x! > width - 20) d.x = width - 20;
+          }
+        });
+
+        linkPath.attr('d', d => {
+          const s = d.source as GraphNode;
+          const t = d.target as GraphNode;
+          if (!s || !t || isNaN(s.x!) || isNaN(t.x!)) return '';
+          const dx = (t.x! - s.x!) * 0.4;
+          return `M ${s.x},${s.y} C ${s.x! + Math.abs(dx)},${s.y} ${t.x! - Math.abs(dx)},${t.y} ${t.x},${t.y}`;
+        });
+        nodeCircle.attr('cx', d => d.x!).attr('cy', d => d.y!);
+      });
+
+    } catch (e) {
+      console.error("D3 Error:", e);
+    }
   }, []);
 
   return (
-    <div className="h-screen bg-background text-foreground overflow-hidden relative">
-
-      {/* Background Ambient Glow - subtle rainbow */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-red-500/5 via-yellow-500/5 to-green-500/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 blur-[120px] rounded-full pointer-events-none" />
-
-      {/* Navbar */}
+    <div className="h-screen w-full bg-[#050505] text-white overflow-hidden relative font-sans">
       <motion.nav
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="absolute top-0 left-0 right-0 z-20 flex justify-between items-start p-6 max-w-[1400px] mx-auto"
+        transition={{ duration: 0.8 }}
+        className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-8 max-w-[1800px] mx-auto"
       >
-        {/* Logo: PVCS / Prism - Two Lines */}
-        <div className="flex flex-col leading-tight tracking-tight">
-          <span className="font-bold text-2xl text-foreground" style={{ fontFamily: 'var(--font-display)' }}>
-            PVCS
-          </span>
-          <span
-            className="font-medium text-2xl gradient-text"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Prism
+        <div className="flex flex-col">
+          <h1 className="text-3xl font-black tracking-tight text-white" style={{ fontFamily: 'var(--font-display)' }}>
+            PVCS <span className="gradient-text">Prism</span>
+          </h1>
+          <span className="text-[10px] tracking-[0.4em] text-gray-400 uppercase mt-1">
+            Business Intelligence
           </span>
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3">
-          {/* Dark Mode Toggle */}
-          <button
-            onClick={toggle}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-card-muted text-muted-foreground hover:text-foreground transition-colors"
-            title={isDark ? 'Hell-Modus' : 'Dunkel-Modus'}
-          >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        <div className="flex items-center gap-6">
+          <button onClick={toggle} className="text-gray-400 hover:text-white transition-colors">
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-
-          {/* Launch App Button */}
-          <button
-            onClick={() => setShowLogin(true)}
-            className="px-6 py-3 rounded-full font-semibold text-[#1A1A12] gradient-main hover:scale-105 transition-transform duration-300 shadow-[var(--shadow-glow)]"
-          >
-            Launch App
+          <button onClick={() => setShowLogin(true)} className="group relative px-8 py-3 bg-white/5 border border-white/10 rounded-full overflow-hidden transition-all hover:bg-white/10">
+            <span className="relative text-xs font-bold tracking-widest uppercase">Launch App</span>
           </button>
         </div>
       </motion.nav>
 
-      {/* Main Visual: Full-screen SVG with Beam → Prism → Tree */}
-      <motion.div
-        ref={containerRef}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 0.3 }}
-        className="absolute inset-0 z-10"
-      >
-        <svg ref={svgRef} width="100%" height="100%" className="w-full h-full" />
-      </motion.div>
+      <div ref={containerRef} className="absolute inset-0 z-10 pointer-events-none">
+        <svg ref={svgRef} width="100%" height="100%" />
+      </div>
 
-      {/* Login Modal */}
-      {showLogin && <LoginModal />}
+      {showLogin && <div className="pointer-events-auto relative z-50"><LoginModal /></div>}
     </div>
   );
 }
