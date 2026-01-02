@@ -8,7 +8,7 @@ import { ProjectManagementEntry } from './projectManagement';
 import { Match } from './common';
 
 // Database schema version
-export const DB_VERSION = 1;
+export const DB_VERSION = 3;
 export const DB_NAME = 'PPSDatabase';
 
 // Store names

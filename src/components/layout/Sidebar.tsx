@@ -13,6 +13,8 @@ import {
   PieChart,
   LineChart,
   Activity,
+  Kanban,
+  Calculator,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -55,6 +57,8 @@ const navigation: NavSection[] = [
     items: [
       { label: 'Dashboard', path: '/projects/controlling', icon: LayoutDashboard },
       { label: 'Projekte', path: '/projects/list', icon: Folders },
+      { label: 'Planner', path: '/planner', icon: Kanban },
+      { label: 'Einzelcontrolling', path: '/einzelcontrolling', icon: Calculator },
     ],
   },
   {

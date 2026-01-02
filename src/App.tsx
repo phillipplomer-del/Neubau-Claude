@@ -23,6 +23,13 @@ import ProjectList from './pages/projectManagement/ProjectList';
 import ProjectDetails from './pages/projectManagement/ProjectDetails';
 import ControllingView from './pages/projectManagement/ControllingView';
 
+// Planner pages
+import PlannerDashboard from './pages/projectManagement/planner/PlannerDashboard';
+import BoardView from './pages/projectManagement/planner/BoardView';
+
+// Einzelcontrolling pages
+import EinzelcontrollingView from './pages/projectManagement/einzelcontrolling/EinzelcontrollingView';
+
 // Data Comparison pages
 import DataComparisonDashboard from './pages/dataComparison/Dashboard';
 
@@ -63,6 +70,15 @@ function App() {
               <Route path=":id" element={<ProjectDetails />} />
               <Route path="controlling" element={<ControllingView />} />
             </Route>
+
+            {/* Planner routes */}
+            <Route path="planner">
+              <Route index element={<PlannerDashboard />} />
+              <Route path=":boardId" element={<BoardView />} />
+            </Route>
+
+            {/* Einzelcontrolling routes */}
+            <Route path="einzelcontrolling" element={<EinzelcontrollingView />} />
 
             {/* Data Comparison routes */}
             <Route path="datacomparison">
