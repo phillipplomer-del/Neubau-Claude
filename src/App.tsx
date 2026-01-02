@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider } from './contexts/UserContext';
 import LoginModal from './components/auth/LoginModal';
 import Layout from './components/layout/Layout';
+import Landing from './pages/Landing';
 import Home from './pages/Home';
 import Import from './pages/Import';
 
@@ -41,9 +42,12 @@ function App() {
   return (
     <UserProvider>
       <BrowserRouter>
-        <LoginModal />
         <Routes>
-          <Route path="/" element={<Layout />}>
+          {/* Landing page - outside of Layout (no sidebar/header) */}
+          <Route path="/landing" element={<Landing />} />
+
+          {/* Main app with Layout */}
+          <Route path="/" element={<><LoginModal /><Layout /></>}>
             <Route index element={<Home />} />
             <Route path="import" element={<Import />} />
 

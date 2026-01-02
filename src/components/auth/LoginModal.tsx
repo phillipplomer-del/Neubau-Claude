@@ -38,10 +38,10 @@ export default function LoginModal() {
         {/* Header */}
         <div className="bg-primary px-6 py-8 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary-foreground/20 text-primary-foreground font-bold text-2xl mx-auto mb-4">
-            G
+            ▲
           </div>
           <h1 className="text-2xl font-bold text-primary-foreground">
-            Willkommen bei Galadriel
+            Willkommen bei PVCS Prism
           </h1>
           <p className="mt-2 text-primary-foreground/80 text-sm">
             Ihr Business Intelligence Dashboard

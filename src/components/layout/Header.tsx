@@ -34,13 +34,13 @@ export default function Header({ sidebarCollapsed, onSidebarToggle }: HeaderProp
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-main gradient-shift text-white font-bold text-lg shadow-[var(--shadow-glow)]">
-              G
+              ▲
             </div>
             <span
               className="text-xl font-semibold gradient-text"
               style={{ fontFamily: 'var(--font-display)' }}
             >
-              Galadriel
+              PVCS Prism
             </span>
           </Link>
         </div>

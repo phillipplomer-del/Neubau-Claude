@@ -41,7 +41,7 @@ export default function Home() {
             className="text-[26px] font-bold text-foreground"
             style={{ fontFamily: 'var(--font-display)', lineHeight: 1.2 }}
           >
-            Willkommen{user?.firstName ? `, ${user.firstName}` : ' bei Galadriel'}
+            Willkommen{user?.firstName ? `, ${user.firstName}` : ' bei PVCS Prism'}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Ihr Business Intelligence Dashboard für Sales, Produktion und Projektmanagement
@@ -66,7 +66,7 @@ export default function Home() {
       {/* App Description Card */}
       <Card variant="muted" className="p-5">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <span className="font-semibold gradient-text">Galadriel</span> unterstützt Sie bei der täglichen Arbeit:
+          <span className="font-semibold gradient-text">PVCS Prism</span> unterstützt Sie bei der täglichen Arbeit:
           Überwachen Sie offene Lieferungen im Sales-Bereich, planen Sie Produktionskapazitäten und behalten Sie Ihre Projekte im Blick.
           Importieren Sie Ihre Excel-Daten und erhalten Sie aussagekräftige Auswertungen und KPIs.
         </p>

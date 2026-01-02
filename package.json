@@ -1,5 +1,5 @@
 {
-  "name": "galadriel",
+  "name": "pvcs-prism",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -19,6 +19,7 @@
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
     "firebase": "^12.7.0",
+    "framer-motion": "^12.23.26",
     "frappe-gantt": "^0.6.1",
     "html2canvas": "^1.4.1",
     "idb": "^8.0.0",
