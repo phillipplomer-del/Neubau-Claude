@@ -71,3 +71,58 @@ export interface SalesKPI {
   averageDeliveryTime: number; // days
   currency: string;
 }
+
+// Extended KPIs for Sales Dashboard
+export interface SalesDashboardKPIs {
+  // Main KPIs
+  pipelineValue: number;           // Offenes Auftragsvolumen
+  monthlyOrders: number;           // Auftragseingang im aktuellen Monat
+  planVsActualPercent: number;     // Plan/Ist in %
+  openDeliveries: number;          // Offene Lieferungen
+  delayedOrders: number;           // Verzögerte Aufträge
+  averageMargin: number;           // Durchschnittliche Marge in %
+
+  // Trends (Vergleich zum Vormonat)
+  pipelineValueChange: number;     // % Änderung
+  monthlyOrdersChange: number;     // % Änderung
+  delayedOrdersChange: number;     // % Änderung
+
+  // By Category
+  byCategory: {
+    A: { count: number; value: number };
+    B: { count: number; value: number };
+    C: { count: number; value: number };
+  };
+
+  // By Sales Rep
+  bySalesRep: Array<{ name: string; count: number; value: number }>;
+
+  // Revenue over time
+  revenueByMonth: Array<{
+    month: string;
+    plan: number;
+    actual: number;
+  }>;
+
+  // Pipeline stages
+  pipelineStages: Array<{
+    stage: string;
+    count: number;
+    value: number;
+  }>;
+}
+
+// Pipeline stage type
+export type PipelineStage = 'quote' | 'order' | 'production' | 'ready' | 'delivered';
+
+// Extended Sales Entry with dashboard fields
+export interface SalesEntryExtended extends SalesEntry {
+  // Dashboard-specific fields
+  margin?: number;              // Marge in EUR
+  marginPercent?: number;       // Marge in %
+  salesRep?: string;            // Vertriebsmitarbeiter
+  pipelineStage?: PipelineStage;
+  plannedRevenue?: number;      // Plan-Umsatz
+  actualRevenue?: number;       // Ist-Umsatz
+  category?: 'A' | 'B' | 'C';   // Projektkategorie
+}

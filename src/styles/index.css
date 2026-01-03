@@ -1,10 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme inline {
-  /* Font Families */
-  --font-display: 'Poppins', system-ui, -apple-system, sans-serif;
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Font Families - Modern, clean aesthetic */
+  --font-display: 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-sans: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Border Radius - Aqua Design System */
   --radius-card: 20px;
@@ -57,6 +57,15 @@
   --color-chart-3: hsl(var(--chart-3));
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
+  --color-chart-6: hsl(var(--chart-6));
+
+  /* Spectrum colors (dark mode only) */
+  --color-spectrum-red: var(--spectrum-red);
+  --color-spectrum-orange: var(--spectrum-orange);
+  --color-spectrum-yellow: var(--spectrum-yellow);
+  --color-spectrum-green: var(--spectrum-green);
+  --color-spectrum-cyan: var(--spectrum-cyan);
+  --color-spectrum-violet: var(--spectrum-violet);
 
   /* Sidebar colors */
   --color-sidebar: hsl(var(--sidebar));
@@ -118,6 +127,15 @@
     --chart-3: 180 100% 44%;    /* teal */
     --chart-4: 200 100% 44%;    /* cyan */
     --chart-5: 160 100% 44%;    /* mint */
+    --chart-6: 220 100% 50%;    /* blue */
+
+    /* Spectrum colors (not used in light mode) */
+    --spectrum-red: transparent;
+    --spectrum-orange: transparent;
+    --spectrum-yellow: transparent;
+    --spectrum-green: transparent;
+    --spectrum-cyan: transparent;
+    --spectrum-violet: transparent;
 
     /* Shadows */
     --shadow-card: 0 12px 30px rgba(35, 40, 70, 0.08);
@@ -180,12 +198,21 @@
     --danger: #FF6B6B;
     --info: #9EE000;
 
-    /* Chart Colors - Yellow/Lime Gradient */
-    --chart-1: 58 70% 58%;      /* #E0DB4B lemon */
-    --chart-2: 72 100% 44%;     /* #9EE000 lime */
-    --chart-3: 48 100% 44%;     /* gold */
-    --chart-4: 44 100% 44%;     /* orange */
-    --chart-5: 90 100% 48%;     /* green */
+    /* Spectrum Colors - From Landing Page Prism */
+    --spectrum-red: #FF8080;
+    --spectrum-orange: #FFAA80;
+    --spectrum-yellow: #FFFF80;
+    --spectrum-green: #80FF80;
+    --spectrum-cyan: #80DDFF;
+    --spectrum-violet: #CC80FF;
+
+    /* Chart Colors - Spectrum Gradient */
+    --chart-1: 0 100% 75%;      /* #FF8080 red */
+    --chart-2: 30 100% 75%;     /* #FFAA80 orange */
+    --chart-3: 48 100% 44%;     /* #E0BD00 gold (primary) */
+    --chart-4: 120 100% 75%;    /* #80FF80 green */
+    --chart-5: 200 100% 75%;    /* #80DDFF cyan */
+    --chart-6: 270 100% 75%;    /* #CC80FF violet */
 
     /* Shadows - Dark Mode */
     --shadow-card: 0 12px 30px rgba(0, 0, 0, 0.4);
@@ -272,8 +299,9 @@
     background: linear-gradient(135deg, #00E097 0%, #00DEE0 50%, #0050E0 100%);
   }
 
+  /* Dark Mode: Spectrum gradient (Orange → Gold → Green) */
   .dark .gradient-main {
-    background: linear-gradient(135deg, #E0BD00 0%, #9EE000 50%, #45F600 100%);
+    background: linear-gradient(135deg, #FFAA80 0%, #E0BD00 40%, #80FF80 100%);
   }
 
   /* Card Gradients */
@@ -281,28 +309,28 @@
     background: linear-gradient(135deg, #00E097 0%, #00DEE0 100%);
   }
   .dark .gradient-card-1 {
-    background: linear-gradient(135deg, #E0BD00 0%, #E0D900 100%);
+    background: linear-gradient(135deg, #FF8080 0%, #FFAA80 100%);
   }
 
   .gradient-card-2 {
     background: linear-gradient(135deg, #00DEE0 0%, #0050E0 100%);
   }
   .dark .gradient-card-2 {
-    background: linear-gradient(135deg, #E0D900 0%, #9EE000 100%);
+    background: linear-gradient(135deg, #FFAA80 0%, #E0BD00 100%);
   }
 
   .gradient-card-3 {
     background: linear-gradient(135deg, #0097E0 0%, #00E097 100%);
   }
   .dark .gradient-card-3 {
-    background: linear-gradient(135deg, #9EE000 0%, #45F600 100%);
+    background: linear-gradient(135deg, #E0BD00 0%, #80FF80 100%);
   }
 
   .gradient-card-4 {
     background: linear-gradient(135deg, #4BDFE0 0%, #0097E0 100%);
   }
   .dark .gradient-card-4 {
-    background: linear-gradient(135deg, #E0A200 0%, #E0BD00 100%);
+    background: linear-gradient(135deg, #80FF80 0%, #80DDFF 100%);
   }
 
   /* Bar Chart Gradient */
@@ -310,7 +338,7 @@
     background: linear-gradient(180deg, #C4B5FD 0%, #8B7CF6 100%);
   }
   .dark .gradient-bar {
-    background: linear-gradient(180deg, #E0DB4B 0%, #9EE000 100%);
+    background: linear-gradient(180deg, #E0BD00 0%, #80FF80 100%);
   }
 
   /* Gradient Text */
@@ -321,7 +349,7 @@
     background-clip: text;
   }
   .dark .gradient-text {
-    background: linear-gradient(135deg, #E0BD00 0%, #9EE000 50%, #45F600 100%);
+    background: linear-gradient(135deg, #FFAA80 0%, #E0BD00 35%, #80FF80 65%, #80DDFF 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

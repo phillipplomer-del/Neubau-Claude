@@ -31,16 +31,16 @@ const MANAGER_COLORS_LIGHT = [
   '#20B2AA', // light sea green
 ];
 
-// Dark mode colors (Gold/Lime)
+// Dark mode colors (Orange → Gold → Green)
 const MANAGER_COLORS_DARK = [
-  '#E0BD00', // gold (primary)
-  '#E0D900', // yellow
+  '#FFAA80', // orange
+  '#FFC060', // light orange
+  '#E0BD00', // gold
+  '#C5A800', // dark gold
   '#9EE000', // lime
-  '#45F600', // green
-  '#E0A200', // orange gold
-  '#D4E040', // yellow-lime
-  '#B8E000', // lime-green
-  '#8BC34A', // light green
+  '#80FF80', // green
+  '#60E060', // dark green
+  '#A0FF80', // light green
 ];
 
 // Light mode category colors
@@ -50,11 +50,11 @@ const CATEGORY_COLORS_LIGHT = {
   C: '#0050E0', // blue
 };
 
-// Dark mode category colors
+// Dark mode category colors (Orange → Gold → Green)
 const CATEGORY_COLORS_DARK = {
-  A: '#E0BD00', // gold (primary)
-  B: '#9EE000', // lime
-  C: '#45F600', // green
+  A: '#FFAA80', // orange
+  B: '#E0BD00', // gold
+  C: '#80FF80', // green
 };
 
 // Hook to detect dark mode

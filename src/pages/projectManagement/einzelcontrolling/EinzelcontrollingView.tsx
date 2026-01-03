@@ -222,27 +222,27 @@ export default function EinzelcontrollingView() {
               <div className="grid grid-cols-4 gap-4">
                 <KPICard
                   label="Auftragsvolumen"
-                  value={formatCurrency(selectedSnapshot.uebersicht.auftragsvolumen)}
+                  value={formatCurrency(selectedSnapshot.uebersicht?.auftragsvolumen ?? 0)}
                   trend={null}
                 />
                 <KPICard
                   label="Gesamtkosten"
-                  value={formatCurrency(selectedSnapshot.uebersicht.gesamtkosten)}
-                  trend={selectedSnapshot.kpis.kostenabweichungProzent}
+                  value={formatCurrency(selectedSnapshot.uebersicht?.gesamtkosten ?? 0)}
+                  trend={selectedSnapshot.kpis?.kostenabweichungProzent ?? null}
                   trendLabel="vs Plan"
                   invertTrend
                 />
                 <KPICard
                   label="Deckungsbeitrag"
-                  value={formatCurrency(selectedSnapshot.uebersicht.deckungsbeitrag)}
+                  value={formatCurrency(selectedSnapshot.uebersicht?.deckungsbeitrag ?? 0)}
                   trend={null}
-                  subValue={`${selectedSnapshot.uebersicht.deckungsbeitragProzent.toFixed(1)}%`}
+                  subValue={`${(selectedSnapshot.uebersicht?.deckungsbeitragProzent ?? 0).toFixed(1)}%`}
                 />
                 <KPICard
                   label="Fertigstellung"
-                  value={`${selectedSnapshot.uebersicht.fortschrittProzent.toFixed(0)}%`}
+                  value={`${(selectedSnapshot.uebersicht?.fortschrittProzent ?? 0).toFixed(0)}%`}
                   trend={null}
-                  progress={selectedSnapshot.uebersicht.fortschrittProzent}
+                  progress={selectedSnapshot.uebersicht?.fortschrittProzent ?? 0}
                 />
               </div>
 
@@ -255,17 +255,17 @@ export default function EinzelcontrollingView() {
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={selectedSnapshot.kpis.topKostenverursacher}
+                          data={selectedSnapshot.kpis?.topKostenverursacher ?? []}
                           dataKey="kosten"
                           nameKey="bereich"
                           cx="50%"
                           cy="50%"
                           outerRadius={80}
                           label={({ bereich, anteilProzent }) =>
-                            `${bereich}: ${anteilProzent.toFixed(0)}%`
+                            `${bereich}: ${(anteilProzent ?? 0).toFixed(0)}%`
                           }
                         >
-                          {selectedSnapshot.kpis.topKostenverursacher.map((entry, index) => (
+                          {(selectedSnapshot.kpis?.topKostenverursacher ?? []).map((entry, index) => (
                             <Cell
                               key={entry.bereich}
                               fill={Object.values(BEREICH_COLORS)[index % 7]}
@@ -289,8 +289,8 @@ export default function EinzelcontrollingView() {
                         data={[
                           {
                             name: 'Kosten',
-                            Plan: selectedSnapshot.kpis.planKosten,
-                            Ist: selectedSnapshot.kpis.istKosten,
+                            Plan: selectedSnapshot.kpis?.planKosten ?? 0,
+                            Ist: selectedSnapshot.kpis?.istKosten ?? 0,
                           },
                         ]}
                         layout="vertical"
@@ -300,8 +300,8 @@ export default function EinzelcontrollingView() {
                         <YAxis type="category" dataKey="name" />
                         <Tooltip formatter={(value: number) => formatCurrency(value)} />
                         <Legend />
-                        <Bar dataKey="Plan" fill="#3B82F6" />
-                        <Bar dataKey="Ist" fill="#EF4444" />
+                        <Bar dataKey="Plan" fill="#E0BD00" />
+                        <Bar dataKey="Ist" fill="#FFAA80" />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -313,30 +313,30 @@ export default function EinzelcontrollingView() {
                 <DetailCard
                   title="Vorkalkulation"
                   items={[
-                    { label: 'Material', value: selectedSnapshot.vorkalkulation.material },
-                    { label: 'Fertigung', value: selectedSnapshot.vorkalkulation.fertigung },
-                    { label: 'Montage', value: selectedSnapshot.vorkalkulation.montage },
-                    { label: 'Konstruktion', value: selectedSnapshot.vorkalkulation.konstruktion },
-                    { label: 'Gesamt', value: selectedSnapshot.vorkalkulation.gesamt, bold: true },
+                    { label: 'Material', value: selectedSnapshot.vorkalkulation?.material ?? 0 },
+                    { label: 'Fertigung', value: selectedSnapshot.vorkalkulation?.fertigung ?? 0 },
+                    { label: 'Montage', value: selectedSnapshot.vorkalkulation?.montage ?? 0 },
+                    { label: 'Konstruktion', value: selectedSnapshot.vorkalkulation?.konstruktion ?? 0 },
+                    { label: 'Gesamt', value: selectedSnapshot.vorkalkulation?.gesamt ?? 0, bold: true },
                   ]}
                 />
                 <DetailCard
                   title="Produktion"
                   items={[
-                    { label: 'Stunden Fertigung', value: selectedSnapshot.produktion.stundenFertigung, unit: 'h' },
-                    { label: 'Stunden Montage', value: selectedSnapshot.produktion.stundenMontage, unit: 'h' },
-                    { label: 'Kosten Fertigung', value: selectedSnapshot.produktion.kostenFertigung },
-                    { label: 'Kosten Montage', value: selectedSnapshot.produktion.kostenMontage },
-                    { label: 'Gesamt', value: selectedSnapshot.produktion.gesamt, bold: true },
+                    { label: 'Stunden Fertigung', value: selectedSnapshot.produktion?.stundenFertigung ?? 0, unit: 'h' },
+                    { label: 'Stunden Montage', value: selectedSnapshot.produktion?.stundenMontage ?? 0, unit: 'h' },
+                    { label: 'Kosten Fertigung', value: selectedSnapshot.produktion?.kostenFertigung ?? 0 },
+                    { label: 'Kosten Montage', value: selectedSnapshot.produktion?.kostenMontage ?? 0 },
+                    { label: 'Gesamt', value: selectedSnapshot.produktion?.gesamt ?? 0, bold: true },
                   ]}
                 />
                 <DetailCard
                   title="Einkauf"
                   items={[
-                    { label: 'Materialkosten', value: selectedSnapshot.einkauf.materialkosten },
-                    { label: 'Zukaufteile', value: selectedSnapshot.einkauf.zukaufteile },
-                    { label: 'Dienstleistungen', value: selectedSnapshot.einkauf.dienstleistungen },
-                    { label: 'Gesamt', value: selectedSnapshot.einkauf.gesamt, bold: true },
+                    { label: 'Materialkosten', value: selectedSnapshot.einkauf?.materialkosten ?? 0 },
+                    { label: 'Zukaufteile', value: selectedSnapshot.einkauf?.zukaufteile ?? 0 },
+                    { label: 'Dienstleistungen', value: selectedSnapshot.einkauf?.dienstleistungen ?? 0 },
+                    { label: 'Gesamt', value: selectedSnapshot.einkauf?.gesamt ?? 0, bold: true },
                   ]}
                 />
               </div>

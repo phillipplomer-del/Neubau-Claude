@@ -58,12 +58,14 @@ export async function getOrCreateProject(
   const newProject: EinzelcontrollingProject = {
     id: projectRef.id,
     projektnummer,
-    projektname,
-    kundenname,
     snapshots: [],
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   };
+
+  // Only add optional fields if they have values (Firestore doesn't allow undefined)
+  if (projektname) newProject.projektname = projektname;
+  if (kundenname) newProject.kundenname = kundenname;
 
   await setDoc(projectRef, newProject);
   return newProject;

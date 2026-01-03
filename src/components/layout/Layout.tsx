@@ -4,7 +4,7 @@ import Header from './Header';
 import Sidebar from './Sidebar';
 
 export default function Layout() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   return (
     <div className="h-full bg-background">

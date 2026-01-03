@@ -331,12 +331,13 @@ export const BEREICH_LABELS: Record<string, string> = {
   sonstiges: 'Sonstiges',
 };
 
+// Dark mode colors (Orange → Gold → Green)
 export const BEREICH_COLORS: Record<string, string> = {
-  vorkalkulation: '#3B82F6',
-  pmKonstruktion: '#8B5CF6',
-  einkauf: '#F59E0B',
-  produktion: '#EF4444',
-  versand: '#06B6D4',
-  vertrieb: '#10B981',
-  sonstiges: '#94A3B8',
+  vorkalkulation: '#FFAA80',   // orange
+  pmKonstruktion: '#FFC060',   // light orange
+  einkauf: '#E0BD00',          // gold
+  produktion: '#C5A800',       // dark gold
+  versand: '#9EE000',          // lime
+  vertrieb: '#80FF80',         // green
+  sonstiges: '#60E060',        // dark green
 };

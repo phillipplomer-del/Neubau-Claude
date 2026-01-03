@@ -29,13 +29,13 @@ const COLORS_LIGHT = {
   marge: '#00C9A7',            // sea green
 };
 
-// Dark mode colors (Gold/Lime)
+// Dark mode colors (Orange → Gold → Green)
 const COLORS_DARK = {
-  umsatz: '#E0BD00',           // gold (primary)
-  vk: '#E0D900',               // yellow
-  aktuell: '#9EE000',          // lime
-  voraussichtlich: '#45F600',  // green
-  marge: '#E0A200',            // orange gold
+  umsatz: '#FFAA80',           // orange
+  vk: '#FFD080',               // light gold
+  aktuell: '#E0BD00',          // gold
+  voraussichtlich: '#9EE000',  // lime
+  marge: '#80FF80',            // green
 };
 
 // Hook to detect dark mode

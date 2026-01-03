@@ -29,22 +29,33 @@ interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
   delay?: number;
 }
 
-const SPECTRUM_COLORS = [
-  'hsla(0, 100%, 75%, 0.85)',
-  'hsla(30, 100%, 75%, 0.85)',
-  'hsla(60, 100%, 75%, 0.85)',
-  'hsla(120, 100%, 75%, 0.85)',
-  'hsla(200, 100%, 75%, 0.85)',
-  'hsla(270, 100%, 75%, 0.85)',
+// Light mode: pastel colors that work well on light backgrounds
+const SPECTRUM_COLORS_LIGHT = [
+  'hsla(0, 85%, 55%, 0.9)',    // red
+  'hsla(30, 90%, 55%, 0.9)',   // orange
+  'hsla(50, 95%, 50%, 0.9)',   // gold/yellow
+  'hsla(120, 80%, 45%, 0.9)',  // green
+  'hsla(200, 85%, 50%, 0.9)',  // cyan
+  'hsla(270, 75%, 55%, 0.9)',  // violet
 ];
 
-function generatePrismData() {
+// Dark mode: vibrant, saturated colors that pop on dark backgrounds
+const SPECTRUM_COLORS_DARK = [
+  'hsla(0, 100%, 70%, 0.95)',   // bright red
+  'hsla(30, 100%, 70%, 0.95)',  // bright orange
+  'hsla(50, 100%, 60%, 0.95)',  // gold
+  'hsla(120, 100%, 65%, 0.95)', // bright green
+  'hsla(190, 100%, 65%, 0.95)', // bright cyan
+  'hsla(270, 100%, 75%, 0.95)', // bright violet
+];
+
+function generatePrismData(spectrumColors: string[]) {
   const nodes: GraphNode[] = [];
   const links: GraphLink[] = [];
   let globalDelay = 1000;
 
-  // 1. ROOTS 
-  SPECTRUM_COLORS.forEach((color, i) => {
+  // 1. ROOTS
+  spectrumColors.forEach((color: string, i: number) => {
     nodes.push({
       id: `root-${i}`,
       group: i,
@@ -57,7 +68,7 @@ function generatePrismData() {
   });
 
   // 2. BRANCHES (Rich Tree Structure)
-  SPECTRUM_COLORS.forEach((color, i) => {
+  spectrumColors.forEach((color: string, i: number) => {
     const rootId = `root-${i}`;
 
     // Level 1: Main branches 
@@ -147,6 +158,13 @@ export default function Landing() {
 
       const defs = svg.append('defs');
 
+      // Theme-aware colors
+      const beamColor = isDark ? '#fff' : '#000';
+      const prismFillLight = isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)';
+      const prismFillMid = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+      const prismStroke = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)';
+      const refractionFill = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)';
+
       // Crisp Glow
       const filter = defs.append('filter').attr('id', 'neon-glow').attr('filterUnits', 'userSpaceOnUse');
       filter.append('feGaussianBlur').attr('stdDeviation', '2.5').attr('result', 'coloredBlur');
@@ -157,15 +175,15 @@ export default function Landing() {
       // Beam Gradient
       const beamGrad = defs.append('linearGradient').attr('id', 'beam-grad')
         .attr('x1', '0%').attr('y1', '0%').attr('x2', '100%').attr('y2', '0%');
-      beamGrad.append('stop').attr('offset', '0%').attr('stop-color', '#fff').attr('stop-opacity', 0);
-      beamGrad.append('stop').attr('offset', '20%').attr('stop-color', '#fff').attr('stop-opacity', 0.6);
-      beamGrad.append('stop').attr('offset', '100%').attr('stop-color', '#fff').attr('stop-opacity', 1);
+      beamGrad.append('stop').attr('offset', '0%').attr('stop-color', beamColor).attr('stop-opacity', 0);
+      beamGrad.append('stop').attr('offset', '20%').attr('stop-color', beamColor).attr('stop-opacity', 0.6);
+      beamGrad.append('stop').attr('offset', '100%').attr('stop-color', beamColor).attr('stop-opacity', 1);
 
       const prismGrad = defs.append('linearGradient').attr('id', 'prism-grad')
         .attr('x1', '0%').attr('y1', '100%').attr('x2', '50%').attr('y2', '0%');
-      prismGrad.append('stop').attr('offset', '0%').attr('stop-color', 'rgba(255,255,255,0.02)');
-      prismGrad.append('stop').attr('offset', '50%').attr('stop-color', 'rgba(255,255,255,0.1)');
-      prismGrad.append('stop').attr('offset', '100%').attr('stop-color', 'rgba(255,255,255,0.02)');
+      prismGrad.append('stop').attr('offset', '0%').attr('stop-color', prismFillLight);
+      prismGrad.append('stop').attr('offset', '50%').attr('stop-color', prismFillMid);
+      prismGrad.append('stop').attr('offset', '100%').attr('stop-color', prismFillLight);
 
 
       // --- GEOMETRY ---
@@ -211,13 +229,13 @@ export default function Landing() {
       const refractionPoly = `M ${entryPoint.x},${entryPoint.y} L ${specStart.x},${specStart.y} L ${specEnd.x},${specEnd.y} Z`;
       internalGroup.append('path')
         .attr('d', refractionPoly)
-        .attr('fill', 'rgba(255,255,255,0.15)')
+        .attr('fill', refractionFill)
         .attr('stroke', 'none');
 
-      const prismBody = svg.append('path')
+      svg.append('path')
         .attr('d', `M ${pTop.x} ${pTop.y} L ${pRight.x} ${pRight.y} L ${pLeft.x} ${pLeft.y} Z`)
         .attr('fill', 'url(#prism-grad)')
-        .attr('stroke', 'rgba(255,255,255,0.15)')
+        .attr('stroke', prismStroke)
         .attr('stroke-width', 1);
 
       const beamLine = svg.append('line')
@@ -233,13 +251,14 @@ export default function Landing() {
         .transition().duration(800).ease(d3.easeLinear).attr('opacity', 0.9).attr('stroke-dashoffset', 0);
 
       svg.append('circle').attr('cx', entryPoint.x).attr('cy', entryPoint.y).attr('r', 0)
-        .attr('fill', '#fff').attr('filter', 'url(#neon-glow)')
+        .attr('fill', beamColor).attr('filter', 'url(#neon-glow)')
         .transition().delay(750).duration(200).attr('r', 3);
 
 
       // 4. Force Tree (Exiting Right)
-      const { nodes, links } = generatePrismData();
-      const groups = SPECTRUM_COLORS.length;
+      const spectrumColors = isDark ? SPECTRUM_COLORS_DARK : SPECTRUM_COLORS_LIGHT;
+      const { nodes, links } = generatePrismData(spectrumColors);
+      const groups = spectrumColors.length;
 
       nodes.forEach(node => {
         if (node.id.startsWith('root-')) {
@@ -325,10 +344,10 @@ export default function Landing() {
     } catch (e) {
       console.error("D3 Error:", e);
     }
-  }, []);
+  }, [isDark]);
 
   return (
-    <div className="h-screen w-full bg-[#050505] text-white overflow-hidden relative font-sans">
+    <div className="h-screen w-full bg-background text-foreground overflow-hidden relative font-sans transition-colors duration-300">
       <motion.nav
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -336,19 +355,31 @@ export default function Landing() {
         className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-8 max-w-[1800px] mx-auto"
       >
         <div className="flex flex-col">
-          <h1 className="text-3xl font-black tracking-tight text-white" style={{ fontFamily: 'var(--font-display)' }}>
+          <h1
+            className="text-4xl font-bold text-foreground"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
             PVCS <span className="gradient-text">Prism</span>
           </h1>
-          <span className="text-[10px] tracking-[0.4em] text-gray-400 uppercase mt-1">
+          <span
+            className="text-[11px] tracking-[0.35em] text-muted-foreground uppercase mt-2"
+            style={{ fontFamily: 'var(--font-sans)', fontWeight: 500 }}
+          >
             Business Intelligence
           </span>
         </div>
         <div className="flex items-center gap-6">
-          <button onClick={toggle} className="text-gray-400 hover:text-white transition-colors">
+          <button onClick={toggle} className="text-muted-foreground hover:text-foreground transition-colors">
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button onClick={() => setShowLogin(true)} className="group relative px-8 py-3 bg-white/5 border border-white/10 rounded-full overflow-hidden transition-all hover:bg-white/10">
-            <span className="relative text-xs font-bold tracking-widest uppercase">Launch App</span>
+          <button
+            onClick={() => setShowLogin(true)}
+            className="group relative px-8 py-3 bg-foreground/5 border border-foreground/10 rounded-full overflow-hidden transition-all hover:bg-foreground/10 hover:border-foreground/20"
+            style={{ fontFamily: 'var(--font-sans)' }}
+          >
+            <span className="relative text-[11px] font-semibold tracking-[0.2em] uppercase">
+              Launch App
+            </span>
           </button>
         </div>
       </motion.nav>

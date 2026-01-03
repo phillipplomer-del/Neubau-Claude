@@ -33,13 +33,13 @@ const CATEGORY_COLORS_LIGHT = {
 };
 const PRIMARY_COLOR_LIGHT = '#00E097';
 
-// Dark mode colors (Gold/Lime)
+// Dark mode colors (Orange → Gold → Green)
 const CATEGORY_COLORS_DARK = {
-  A: '#E0BD00',  // gold (primary)
-  B: '#9EE000',  // lime
-  C: '#45F600',  // green
+  A: '#FFAA80',  // orange
+  B: '#E0BD00',  // gold
+  C: '#80FF80',  // green
 };
-const PRIMARY_COLOR_DARK = '#E0BD00';
+const PRIMARY_COLOR_DARK = '#E0BD00'; // gold as primary
 
 // Hook to detect dark mode
 function useDarkMode() {
