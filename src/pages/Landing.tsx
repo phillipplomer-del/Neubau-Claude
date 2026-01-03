@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import * as d3 from 'd3';
 import { Sun, Moon } from 'lucide-react';
 import LoginModal from '@/components/auth/LoginModal';
+import { useUserContext } from '@/contexts/UserContext';
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -100,8 +101,17 @@ function generatePrismData() {
 }
 
 export default function Landing() {
+  const { isLoggedIn } = useUserContext();
   const [isDark, setIsDark] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
+
+  // Redirect to home after successful login
+  useEffect(() => {
+    if (isLoggedIn && showLogin) {
+      setShowLogin(false);
+      window.location.href = '/';
+    }
+  }, [isLoggedIn, showLogin]);
 
   useEffect(() => {
     const root = document.documentElement;
