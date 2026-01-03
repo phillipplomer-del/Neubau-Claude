@@ -73,3 +73,44 @@ export interface GanttTask {
   custom_class?: string; // For styling
   productionEntry: ProductionEntry;
 }
+
+// Dashboard KPIs
+export interface ProductionDashboardKPIs {
+  // Termin-KPIs (Priorität)
+  onTimeDeliveryRate: number;      // Termintreue %
+  overdueCount: number;            // Anzahl überfällig
+  averageDelayDays: number;        // Ø Verspätung in Tagen
+  atRiskCount: number;             // Gefährdete Aufträge (<3 Tage Puffer)
+
+  // Sekundäre KPIs
+  openOrders: number;              // Offene Aufträge
+  completedThisWeek: number;       // Diese Woche abgeschlossen
+  hoursVariance: number;           // Stunden-Abweichung (Ist - Soll)
+  backlogHours: number;            // Rückstand in Stunden
+
+  // Vorwochen-Deltas
+  onTimeDeliveryRateChange: number;
+  overdueCountChange: number;
+  averageDelayDaysChange: number;
+  openOrdersChange: number;
+}
+
+export type CriticalOrderStatus = 'overdue' | 'at_risk' | 'on_track';
+
+export interface CriticalOrder {
+  id: string;
+  projektnummer: string;
+  name: string;
+  dueDate: Date;
+  delayDays: number;
+  status: CriticalOrderStatus;
+  hoursVariance?: number;
+}
+
+// Weekly trend data point
+export interface ProductionTrendDataPoint {
+  week: string;           // "KW01", "KW02", etc.
+  onTimeRate: number;     // Termintreue %
+  overdueCount: number;
+  openOrders: number;
+}
