@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import type { PMTask, PMColumn, PMBoard, PMPriority, UpdateTaskInput } from '@/types/planner';
 import Button from '@/components/ui/Button';
-import { Calendar } from 'lucide-react';
+import { Calendar, Wand2 } from 'lucide-react';
 import TaskModal from './TaskModal';
 
 interface GanttTaskReactViewProps {
@@ -98,20 +98,47 @@ export default function GanttTaskReactView({
     return map;
   }, [tasks]);
 
-  // Convert PMTask to gantt-task-react Task format
-  // Sort by start date so "Projektstart" appears at top
-  const ganttTasks: Task[] = useMemo(() => {
-    // Filter tasks with dates and sort by start date
-    const tasksWithDates = tasks
-      .filter(t => t.startDate || t.dueDate)
-      .sort((a, b) => {
-        const startA = a.startDate?.toDate() || a.dueDate?.toDate();
-        const startB = b.startDate?.toDate() || b.dueDate?.toDate();
-        if (!startA || !startB) return 0;
-        return startA.getTime() - startB.getTime();
-      });
+  // Fixed order based on tasks.csv - this is the standard project sequence
+  const TASK_ORDER: string[] = [
+    'M1',   // Bestellung eingegangen
+    'V1',   // Interne Klärung
+    'V2.1', // Konstruktion Entwurfserstellung
+    'M3',   // Konstruktion Entwurf freigegeben
+    'V2.3', // Konstruktion Zeichnungsfreigabe
+    'M4',   // Konstruktion Übergabe PP erfolgt
+    'V3.1', // Beschaffung für Produktionsbeginn
+    'V3.2', // Beschaffung für Langläufer Montage
+    'V3.3', // Beschaffung für Montagebeginn
+    'V3.4', // Produktionsplanung
+    'V4.1', // Produktion/Fertigung
+    'M5',   // Montagebereitschaft erreicht
+    'V4.3', // Montage
+    'V4.4', // Produktprüfung
+    'M6',   // FAT durchgeführt
+    'V5.1', // Verpackung
+    'M7',   // Produkt versendet
+    'M8',   // Rechnungsstellung
+  ];
 
-    return tasksWithDates.map((task, index) => {
+  // Convert PMTask to gantt-task-react Task format
+  // Sort by fixed TASK_ORDER based on task code
+  const ganttTasks: Task[] = useMemo(() => {
+    // Filter only tasks with dates
+    const tasksWithDates = tasks.filter(t => t.startDate || t.dueDate);
+
+    // Build a map of code to desired order
+    const getOrder = (code: string | undefined): number => {
+      if (!code) return 999;
+      const idx = TASK_ORDER.indexOf(code);
+      return idx === -1 ? 999 : idx;
+    };
+
+    // Sort by the fixed order (create new sorted array)
+    const sortedTasks = [...tasksWithDates].sort((a, b) => {
+      return getOrder(a.code) - getOrder(b.code);
+    });
+
+    return sortedTasks.map((task, index) => {
       const startDate = task.startDate?.toDate();
       const dueDate = task.dueDate?.toDate();
 
@@ -132,6 +159,8 @@ export default function GanttTaskReactView({
         });
       }
 
+      // IMPORTANT: displayOrder must start at 1, not 0!
+      // The library uses `displayOrder || Number.MAX_VALUE` which treats 0 as falsy
       return {
         id: task.id,
         name: task.code ? `[${task.code}] ${task.title}` : task.title,
@@ -140,7 +169,7 @@ export default function GanttTaskReactView({
         end,
         progress: task.completionPercentage || 0,
         dependencies,
-        displayOrder: index,
+        displayOrder: index + 1, // Start from 1, not 0!
         styles: {
           backgroundColor: PRIORITY_COLORS[task.priority],
           backgroundSelectedColor: PRIORITY_COLORS[task.priority],
@@ -283,6 +312,63 @@ export default function GanttTaskReactView({
     // We could add a viewDate state if needed
   };
 
+  // Auto-schedule tasks based on TASK_ORDER sequence
+  // Each task starts after the previous one ends
+  const handleAutoSchedule = useCallback(async () => {
+    // Get tasks with dates, sorted by TASK_ORDER
+    const tasksWithDates = tasks.filter(t => t.startDate || t.dueDate);
+
+    const getOrder = (code: string | undefined): number => {
+      if (!code) return 999;
+      const idx = TASK_ORDER.indexOf(code);
+      return idx === -1 ? 999 : idx;
+    };
+
+    const sortedTasks = [...tasksWithDates].sort((a, b) => {
+      return getOrder(a.code) - getOrder(b.code);
+    });
+
+    if (sortedTasks.length === 0) return;
+
+    // Start from the first task's start date, or today
+    let currentDate = sortedTasks[0].startDate?.toDate() || new Date();
+
+    // Default durations (in days) for different task types
+    const getDefaultDuration = (task: PMTask): number => {
+      if (task.taskType === 'milestone') return 0; // Milestones have no duration
+      // Calculate existing duration if available
+      if (task.startDate && task.dueDate) {
+        const start = task.startDate.toDate();
+        const end = task.dueDate.toDate();
+        const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        return Math.max(1, duration);
+      }
+      return 5; // Default 5 days for tasks without duration
+    };
+
+    // Schedule each task sequentially
+    for (let i = 0; i < sortedTasks.length; i++) {
+      const task = sortedTasks[i];
+      const duration = getDefaultDuration(task);
+
+      const newStart = new Date(currentDate);
+      const newEnd = new Date(currentDate);
+      newEnd.setDate(newEnd.getDate() + duration);
+
+      // Update the task with new dates
+      await onUpdateTask(task.id, {
+        startDate: newStart,
+        dueDate: newEnd,
+      });
+
+      // Next task starts after this one ends (+ 1 day gap for clarity)
+      currentDate = new Date(newEnd);
+      if (task.taskType !== 'milestone') {
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+  }, [tasks, onUpdateTask]);
+
   // Don't render if no tasks with dates
   if (ganttTasks.length === 0) {
     return (
@@ -335,10 +421,16 @@ export default function GanttTaskReactView({
           </div>
         </div>
 
-        <Button variant="ghost" size="sm" onClick={scrollToToday} className="h-7 text-xs">
-          <Calendar className="w-3 h-3 mr-1" />
-          Heute
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={handleAutoSchedule} className="h-7 text-xs">
+            <Wand2 className="w-3 h-3 mr-1" />
+            Auto-Terminierung
+          </Button>
+          <Button variant="ghost" size="sm" onClick={scrollToToday} className="h-7 text-xs">
+            <Calendar className="w-3 h-3 mr-1" />
+            Heute
+          </Button>
+        </div>
       </div>
 
       {/* Gantt Chart - Full Height with Scrollbars */}
@@ -371,18 +463,18 @@ export default function GanttTaskReactView({
         <TaskModal
           task={selectedTask}
           columns={columns}
+          boardId={board.id}
+          userName=""
           allTasks={tasks}
-          open={true}
-          onClose={() => setSelectedTask(null)}
-          onUpdate={(input) => onUpdateTask(selectedTask.id, input)}
-          onDelete={() => {
-            onDeleteTask(selectedTask.id);
+          onSave={async (input) => {
+            await onUpdateTask(selectedTask.id, input);
             setSelectedTask(null);
           }}
-          onMove={(columnId) => {
-            const targetTasks = tasks.filter((t) => t.columnId === columnId);
-            onMoveTask(selectedTask.id, columnId, targetTasks.length);
+          onDelete={async () => {
+            await onDeleteTask(selectedTask.id);
+            setSelectedTask(null);
           }}
+          onClose={() => setSelectedTask(null)}
         />
       )}
 

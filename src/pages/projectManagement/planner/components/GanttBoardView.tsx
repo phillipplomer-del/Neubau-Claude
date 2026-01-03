@@ -1,7 +1,15 @@
-import { useMemo, useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Milestone } from 'lucide-react';
+import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Milestone } from 'lucide-react';
 import type { PMColumn, PMTask, UpdateTaskInput } from '@/types/planner';
 import { PRIORITY_COLORS } from '@/types/planner';
+
+// Fixed order based on tasks.csv - this is the standard project sequence
+const TASK_ORDER: string[] = [
+  'M1', 'V1', 'V2.1', 'M3', 'V2.3', 'M4',
+  'V3.1', 'V3.2', 'V3.3', 'V3.4',
+  'V4.1', 'M5', 'V4.3', 'V4.4', 'M6',
+  'V5.1', 'M7', 'M8',
+];
 
 interface GanttBoardViewProps {
   columns: PMColumn[];
@@ -78,25 +86,19 @@ export default function GanttBoardView({
     return { startDate: minDate, endDate: maxDate, dateRange: range };
   }, [tasks, zoomLevel]);
 
-  // Group tasks by column
-  const tasksByColumn = useMemo(() => {
-    const map = new Map<string, PMTask[]>();
-    columns.forEach((col) => map.set(col.id, []));
-    tasks.forEach((task) => {
-      const columnTasks = map.get(task.columnId) || [];
-      columnTasks.push(task);
-      map.set(task.columnId, columnTasks);
-    });
-    for (const [columnId, columnTasks] of map) {
-      columnTasks.sort((a, b) => {
-        const aStart = a.startDate?.toDate().getTime() || 0;
-        const bStart = b.startDate?.toDate().getTime() || 0;
-        return aStart - bStart;
-      });
-      map.set(columnId, columnTasks);
-    }
-    return map;
-  }, [columns, tasks]);
+  // Get order for a task code
+  const getTaskOrder = useCallback((code: string | undefined): number => {
+    if (!code) return 999;
+    const idx = TASK_ORDER.indexOf(code);
+    return idx === -1 ? 999 : idx;
+  }, []);
+
+  // Sort all tasks by fixed order (ignoring columns)
+  const sortedTasks = useMemo(() => {
+    return [...tasks]
+      .filter(t => t.startDate || t.dueDate)
+      .sort((a, b) => getTaskOrder(a.code) - getTaskOrder(b.code));
+  }, [tasks, getTaskOrder]);
 
   // Calculate task position and width
   const getTaskStyle = (task: PMTask) => {
@@ -159,6 +161,108 @@ export default function GanttBoardView({
     }
   };
 
+  // Drag state
+  const [dragState, setDragState] = useState<{
+    taskId: string;
+    type: 'move' | 'resize-left' | 'resize-right';
+    startX: number;
+    originalStart: Date;
+    originalEnd: Date;
+  } | null>(null);
+
+  // Handle drag start
+  const handleDragStart = (
+    e: React.MouseEvent,
+    task: PMTask,
+    type: 'move' | 'resize-left' | 'resize-right'
+  ) => {
+    e.stopPropagation();
+    const taskStart = task.startDate?.toDate() || new Date();
+    const taskEnd = task.dueDate?.toDate() || taskStart;
+    setDragState({
+      taskId: task.id,
+      type,
+      startX: e.clientX,
+      originalStart: new Date(taskStart),
+      originalEnd: new Date(taskEnd),
+    });
+  };
+
+  // Handle drag move
+  const handleDragMove = useCallback((e: MouseEvent) => {
+    if (!dragState) return;
+
+    const deltaX = e.clientX - dragState.startX;
+    const daysDelta = Math.round(deltaX / (config.cellWidth / 7));
+
+    if (daysDelta === 0) return;
+
+    const task = tasks.find(t => t.id === dragState.taskId);
+    if (!task) return;
+
+    let newStart = new Date(dragState.originalStart);
+    let newEnd = new Date(dragState.originalEnd);
+
+    if (dragState.type === 'move') {
+      newStart.setDate(newStart.getDate() + daysDelta);
+      newEnd.setDate(newEnd.getDate() + daysDelta);
+    } else if (dragState.type === 'resize-left') {
+      newStart.setDate(newStart.getDate() + daysDelta);
+      if (newStart >= newEnd) return;
+    } else if (dragState.type === 'resize-right') {
+      newEnd.setDate(newEnd.getDate() + daysDelta);
+      if (newEnd <= newStart) return;
+    }
+
+    // Visual feedback only during drag - actual update on mouseup
+  }, [dragState, tasks, config.cellWidth]);
+
+  // Handle drag end
+  const handleDragEnd = useCallback(async (e: MouseEvent) => {
+    if (!dragState) return;
+
+    const deltaX = e.clientX - dragState.startX;
+    const daysDelta = Math.round(deltaX / (config.cellWidth / 7));
+
+    if (daysDelta !== 0) {
+      let newStart = new Date(dragState.originalStart);
+      let newEnd = new Date(dragState.originalEnd);
+
+      if (dragState.type === 'move') {
+        newStart.setDate(newStart.getDate() + daysDelta);
+        newEnd.setDate(newEnd.getDate() + daysDelta);
+      } else if (dragState.type === 'resize-left') {
+        newStart.setDate(newStart.getDate() + daysDelta);
+      } else if (dragState.type === 'resize-right') {
+        newEnd.setDate(newEnd.getDate() + daysDelta);
+      }
+
+      if (newStart < newEnd) {
+        await onTaskUpdate(dragState.taskId, {
+          startDate: newStart,
+          dueDate: newEnd,
+        });
+      }
+    }
+
+    setDragState(null);
+  }, [dragState, config.cellWidth, onTaskUpdate]);
+
+  // Attach global mouse events for drag
+  useEffect(() => {
+    if (!dragState) return;
+
+    const handleMouseMove = (e: MouseEvent) => handleDragMove(e);
+    const handleMouseUp = (e: MouseEvent) => handleDragEnd(e);
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragState, handleDragMove, handleDragEnd]);
+
   return (
     <div className="h-full flex flex-col">
       {/* Toolbar */}
@@ -207,42 +311,23 @@ export default function GanttBoardView({
             <div className="h-12 border-b border-border px-4 flex items-center font-medium text-sm">
               Aufgabe
             </div>
-            {/* Task List */}
+            {/* Task List - sorted by fixed order */}
             <div className="overflow-y-auto" style={{ height: 'calc(100% - 3rem)' }}>
-              {columns.map((column) => {
-                const columnTasks = tasksByColumn.get(column.id) || [];
-                if (columnTasks.length === 0) return null;
-
-                return (
-                  <div key={column.id}>
-                    {/* Column Header */}
-                    <div className="px-4 py-2 bg-muted/50 border-b border-border">
-                      <div className="flex items-center gap-2">
-                        {column.color && (
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: column.color }}
-                          />
-                        )}
-                        <span className="text-sm font-medium">{column.name}</span>
-                      </div>
-                    </div>
-                    {/* Tasks */}
-                    {columnTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        onClick={() => onTaskClick(task)}
-                        className="h-10 px-4 flex items-center gap-2 border-b border-border hover:bg-muted/50 cursor-pointer"
-                      >
-                        {task.taskType === 'milestone' && (
-                          <Milestone className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-                        )}
-                        <span className="text-sm truncate">{task.title}</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
+              {sortedTasks.map((task) => (
+                <div
+                  key={task.id}
+                  onClick={() => onTaskClick(task)}
+                  className="h-10 px-4 flex items-center gap-2 border-b border-border hover:bg-muted/50 cursor-pointer"
+                >
+                  {task.code && (
+                    <span className="text-xs text-muted-foreground font-mono">[{task.code}]</span>
+                  )}
+                  {task.taskType === 'milestone' && (
+                    <Milestone className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+                  )}
+                  <span className="text-sm truncate">{task.title}</span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -264,72 +349,83 @@ export default function GanttBoardView({
                 ))}
               </div>
 
-              {/* Task Rows */}
+              {/* Task Rows - sorted by fixed order */}
               <div className="relative">
-                {columns.map((column) => {
-                  const columnTasks = tasksByColumn.get(column.id) || [];
-                  if (columnTasks.length === 0) return null;
+                {sortedTasks.map((task) => {
+                  const style = getTaskStyle(task);
+                  const isMilestone = task.taskType === 'milestone';
+                  const column = columns.find(c => c.id === task.columnId);
+                  const isDragging = dragState?.taskId === task.id;
 
                   return (
-                    <div key={column.id}>
-                      {/* Column Header Row */}
-                      <div className="h-[33px] bg-muted/30 border-b border-border" />
-
-                      {/* Task Bars */}
-                      {columnTasks.map((task) => {
-                        const style = getTaskStyle(task);
-                        const isMilestone = task.taskType === 'milestone';
-
-                        return (
+                    <div
+                      key={task.id}
+                      className="h-10 border-b border-border relative"
+                    >
+                      {/* Background grid */}
+                      <div className="absolute inset-0 flex">
+                        {dateRange.map((date, index) => (
                           <div
-                            key={task.id}
-                            className="h-10 border-b border-border relative"
-                          >
-                            {/* Background grid */}
-                            <div className="absolute inset-0 flex">
-                              {dateRange.map((date, index) => (
-                                <div
-                                  key={index}
-                                  className={`flex-shrink-0 border-r border-border/50 ${
-                                    isTodayInRange(date) ? 'bg-primary/5' : ''
-                                  }`}
-                                  style={{ width: config.cellWidth }}
-                                />
-                              ))}
-                            </div>
+                            key={index}
+                            className={`flex-shrink-0 border-r border-border/50 ${
+                              isTodayInRange(date) ? 'bg-primary/5' : ''
+                            }`}
+                            style={{ width: config.cellWidth }}
+                          />
+                        ))}
+                      </div>
 
-                            {/* Task Bar */}
-                            {task.startDate && (
-                              <div
-                                onClick={() => onTaskClick(task)}
-                                className={`absolute top-1/2 -translate-y-1/2 cursor-pointer transition-all hover:opacity-80 ${
-                                  isMilestone
-                                    ? 'rotate-45 bg-amber-500'
-                                    : 'rounded h-6'
-                                }`}
-                                style={{
-                                  left: style.left,
-                                  width: isMilestone ? 16 : style.width,
-                                  height: isMilestone ? 16 : undefined,
-                                  backgroundColor: isMilestone
-                                    ? undefined
-                                    : column.color || PRIORITY_COLORS[task.priority],
-                                }}
-                                title={`${task.title}${task.assignee ? ` - ${task.assignee}` : ''}`}
-                              >
-                                {!isMilestone && style.width > 50 && (
-                                  <span className="absolute inset-0 flex items-center px-2 text-xs text-white truncate">
-                                    {task.title}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                      {/* Task Bar */}
+                      {task.startDate && (
+                        <div
+                          className={`absolute top-1/2 -translate-y-1/2 transition-all group ${
+                            isMilestone
+                              ? 'rotate-45 bg-amber-500 cursor-pointer'
+                              : 'rounded h-6 cursor-move'
+                          } ${isDragging ? 'opacity-70 ring-2 ring-primary' : 'hover:opacity-90'}`}
+                          style={{
+                            left: style.left,
+                            width: isMilestone ? 16 : style.width,
+                            height: isMilestone ? 16 : undefined,
+                            backgroundColor: isMilestone
+                              ? undefined
+                              : column?.color || PRIORITY_COLORS[task.priority],
+                          }}
+                          title={`${task.title}${task.assignee ? ` - ${task.assignee}` : ''}`}
+                          onMouseDown={(e) => !isMilestone && handleDragStart(e, task, 'move')}
+                          onClick={() => isMilestone && onTaskClick(task)}
+                        >
+                          {/* Left resize handle */}
+                          {!isMilestone && (
+                            <div
+                              className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-black/20 rounded-l"
+                              onMouseDown={(e) => handleDragStart(e, task, 'resize-left')}
+                            />
+                          )}
+
+                          {/* Task title */}
+                          {!isMilestone && style.width > 50 && (
+                            <span
+                              className="absolute inset-0 flex items-center px-3 text-xs text-white truncate"
+                              onClick={() => onTaskClick(task)}
+                            >
+                              {task.title}
+                            </span>
+                          )}
+
+                          {/* Right resize handle */}
+                          {!isMilestone && (
+                            <div
+                              className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-black/20 rounded-r"
+                              onMouseDown={(e) => handleDragStart(e, task, 'resize-right')}
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
+
               </div>
             </div>
           </div>

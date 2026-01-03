@@ -9,6 +9,7 @@ interface TaskModalProps {
   columns: PMColumn[];
   boardId: string;
   userName: string;
+  allTasks?: PMTask[]; // For dependency selection
   onSave: (taskData: UpdateTaskInput & { columnId?: string; title?: string }) => Promise<void>;
   onDelete: (taskId: string) => Promise<void>;
   onClose: () => void;
@@ -19,6 +20,7 @@ export default function TaskModal({
   columns,
   boardId,
   userName,
+  allTasks = [],
   onSave,
   onDelete,
   onClose,
@@ -40,8 +42,9 @@ export default function TaskModal({
   const [newChecklistItem, setNewChecklistItem] = useState('');
   const [comments, setComments] = useState<PMTaskComment[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [dependencies, setDependencies] = useState<PMTaskDependency[]>(task?.dependencies || []);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'details' | 'checklist' | 'comments'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'checklist' | 'dependencies' | 'comments'>('details');
 
   // Load comments for existing task
   useEffect(() => {
@@ -70,13 +73,45 @@ export default function TaskModal({
         dueDate: dueDate ? new Date(dueDate) : null,
         labels,
         checklist,
+        dependencies,
       });
+      onClose(); // Close modal after successful save
     } catch (err) {
       console.error('Error saving task:', err);
     } finally {
       setIsSaving(false);
     }
   };
+
+  // Dependency management
+  const handleAddDependency = (predecessorId: string) => {
+    if (dependencies.some(d => d.predecessorId === predecessorId)) return;
+    setDependencies([
+      ...dependencies,
+      {
+        predecessorId,
+        type: 'FS', // Finish-to-Start is most common
+        lagDays: 0,
+      },
+    ]);
+  };
+
+  const handleRemoveDependency = (predecessorId: string) => {
+    setDependencies(dependencies.filter(d => d.predecessorId !== predecessorId));
+  };
+
+  const handleUpdateDependencyLag = (predecessorId: string, lagDays: number) => {
+    setDependencies(
+      dependencies.map(d =>
+        d.predecessorId === predecessorId ? { ...d, lagDays } : d
+      )
+    );
+  };
+
+  // Get available tasks for dependencies (exclude self and already added)
+  const availableTasks = allTasks.filter(
+    t => t.id !== task?.id && !dependencies.some(d => d.predecessorId === t.id && d.predecessorId !== t.code)
+  );
 
   const handleDelete = async () => {
     if (task && confirm('Aufgabe wirklich löschen?')) {
@@ -204,6 +239,22 @@ export default function TaskModal({
               </span>
             )}
           </button>
+          {allTasks.length > 0 && (
+            <button
+              onClick={() => setActiveTab('dependencies')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
+                activeTab === 'dependencies'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Link2 className="h-4 w-4" />
+              Abhängigkeiten
+              {dependencies.length > 0 && (
+                <span className="px-1.5 py-0.5 text-xs bg-muted rounded-full">{dependencies.length}</span>
+              )}
+            </button>
+          )}
           {!isNewTask && (
             <button
               onClick={() => setActiveTab('comments')}
@@ -431,6 +482,83 @@ export default function TaskModal({
                   Keine Checklistenpunkte vorhanden
                 </p>
               )}
+            </div>
+          )}
+
+          {activeTab === 'dependencies' && (
+            <div className="space-y-4">
+              {/* Add Dependency */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Vorgänger hinzufügen</label>
+                <select
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleAddDependency(e.target.value);
+                      e.target.value = '';
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-input border border-border rounded-[var(--radius)] text-sm
+                    focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  defaultValue=""
+                >
+                  <option value="" disabled>Task auswählen...</option>
+                  {availableTasks.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.code ? `[${t.code}] ` : ''}{t.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Dependencies List */}
+              <div className="space-y-2">
+                {dependencies.map((dep) => {
+                  const predTask = allTasks.find(t => t.id === dep.predecessorId || t.code === dep.predecessorId);
+                  return (
+                    <div
+                      key={dep.predecessorId}
+                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg group"
+                    >
+                      <Link2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium truncate block">
+                          {predTask?.code ? `[${predTask.code}] ` : ''}{predTask?.title || dep.predecessorId}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {DEPENDENCY_TYPE_LABELS[dep.type]} {dep.lagDays !== 0 && `(+${dep.lagDays} Tage)`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={dep.lagDays}
+                          onChange={(e) => handleUpdateDependencyLag(dep.predecessorId, parseInt(e.target.value) || 0)}
+                          className="w-16 px-2 py-1 bg-input border border-border rounded text-xs text-center"
+                          title="Verzögerung in Tagen"
+                          min="0"
+                        />
+                        <span className="text-xs text-muted-foreground">Tage</span>
+                        <button
+                          onClick={() => handleRemoveDependency(dep.predecessorId)}
+                          className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {dependencies.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">
+                  Keine Abhängigkeiten definiert. Diese Aufgabe kann unabhängig beginnen.
+                </p>
+              )}
+
+              <p className="text-xs text-muted-foreground">
+                Abhängigkeiten definieren, welche Aufgaben abgeschlossen sein müssen, bevor diese beginnen kann.
+              </p>
             </div>
           )}
 

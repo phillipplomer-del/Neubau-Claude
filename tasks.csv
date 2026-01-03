@@ -1,0 +1,25 @@
+﻿Projektstart
+[M1] Bestellung eingegangen
+[V1] Interne Klärung
+Konstruktion
+[V2.1] Konstruktion Entwurfserstellung
+[M3] Konstruktion Entwurf freigegeben
+[V2.3] Konstruktion Zeichnungsfreigabe
+[M4] Konstruktion Übergabe PP erfolgt
+Beschaffung
+[V3.1] Beschaffung für Produktionsbeginn
+[V3.2] Beschaffung für Langläufer Montage
+[V3.3] Beschaffung für Montagebeginn
+[V3.4] Produktionsplanung
+Produktion
+[V4.1] Produktion/Fertigung
+[M5] Montagebereitschaft erreicht
+[V4.3] Montage
+[V4.4] Produktprüfung
+[M6] FAT durchgeführt
+Logistik
+[V5.1] Verpackung
+[M7] Produkt versendet
+Projektabschluß
+[M8] Rechnungsstellung
+

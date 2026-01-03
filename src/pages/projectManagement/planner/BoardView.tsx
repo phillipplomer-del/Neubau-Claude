@@ -6,7 +6,7 @@ import { useUserContext } from '@/contexts/UserContext';
 import type { PMViewType, PMTask, BoardFilters } from '@/types/planner';
 import KanbanBoard from './components/KanbanBoard';
 import TaskListView from './components/TaskListView';
-import GanttBoardView from './components/GanttBoardView';
+import GanttTaskReactView from './components/GanttTaskReactView';
 import TaskModal from './components/TaskModal';
 import AddColumnModal from './components/AddColumnModal';
 
@@ -281,11 +281,13 @@ export default function BoardView() {
         )}
 
         {currentView === 'gantt' && (
-          <GanttBoardView
+          <GanttTaskReactView
+            board={board}
             columns={columns}
             tasks={filteredTasks}
-            onTaskClick={handleOpenTask}
-            onTaskUpdate={updateTask}
+            onUpdateTask={updateTask}
+            onDeleteTask={deleteTask}
+            onMoveTask={moveTask}
           />
         )}
       </div>
