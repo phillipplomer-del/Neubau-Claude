@@ -146,6 +146,21 @@ export default function Landing() {
 
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null);
+
+  // Track mouse position
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseRef.current = { x: e.clientX, y: e.clientY };
+      // Reheat simulation when mouse moves
+      if (simulationRef.current) {
+        simulationRef.current.alpha(0.1).restart();
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   useEffect(() => {
     if (!svgRef.current || !containerRef.current) return;
@@ -276,11 +291,32 @@ export default function Landing() {
       // TAN(30 deg) ~= 0.577
       const MAX_TAN = 0.577;
 
+      // Mouse repulsion settings
+      const MOUSE_RADIUS = 120;
+      const MOUSE_STRENGTH = 80;
+
       const simulation = d3.forceSimulation(nodes)
         // INCREASED DISTANCE slightly to 28 for better reach
         .force('link', d3.forceLink<GraphNode, GraphLink>(links).id(d => d.id).distance(28))
         .force('charge', d3.forceManyBody().strength(-8))
         .force('collide', d3.forceCollide(2))
+        .force('mouse', () => {
+          // Mouse repulsion force
+          const mouse = mouseRef.current;
+          nodes.forEach(d => {
+            if (d.fx !== undefined) return; // Skip fixed root nodes
+
+            const dx = d.x! - mouse.x;
+            const dy = d.y! - mouse.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < MOUSE_RADIUS && dist > 0) {
+              const force = ((MOUSE_RADIUS - dist) / MOUSE_RADIUS) * MOUSE_STRENGTH * 0.01;
+              d.vx! += (dx / dist) * force;
+              d.vy! += (dy / dist) * force;
+            }
+          });
+        })
         .force('flow', alpha => {
           nodes.forEach(d => {
             if (d.fx === undefined) {
@@ -301,6 +337,9 @@ export default function Landing() {
           });
         });
 
+      // Store simulation reference for mouse interaction
+      simulationRef.current = simulation;
+
       const linkPath = svg.append('g').selectAll('path')
         .data(links).enter().append('path')
         .attr('fill', 'none').attr('stroke-width', d => d.value * 0.5)
@@ -310,7 +349,20 @@ export default function Landing() {
       const nodeCircle = svg.append('g').selectAll('circle')
         .data(nodes).enter().append('circle')
         .attr('r', d => d.radius * 0.6).attr('fill', d => d.color)
-        .attr('fill-opacity', 0).style('mix-blend-mode', 'screen');
+        .attr('fill-opacity', 0).style('mix-blend-mode', 'screen')
+        .style('cursor', 'pointer')
+        .on('mouseenter', function(event, d) {
+          d3.select(this)
+            .transition().duration(150)
+            .attr('r', d.radius * 1.8)
+            .attr('filter', 'url(#neon-glow)');
+        })
+        .on('mouseleave', function(event, d) {
+          d3.select(this)
+            .transition().duration(300)
+            .attr('r', d.radius * 0.6)
+            .attr('filter', null);
+        });
 
       linkPath.transition().delay(d => d.delay || 1200).duration(800).attr('stroke-opacity', 0.8);
       nodeCircle.transition().delay(d => d.delay || 1200).duration(800).attr('fill-opacity', 0.9);
@@ -384,8 +436,8 @@ export default function Landing() {
         </div>
       </motion.nav>
 
-      <div ref={containerRef} className="absolute inset-0 z-10 pointer-events-none">
-        <svg ref={svgRef} width="100%" height="100%" />
+      <div ref={containerRef} className="absolute inset-0 z-10">
+        <svg ref={svgRef} width="100%" height="100%" style={{ pointerEvents: 'all' }} />
       </div>
 
       {showLogin && <div className="pointer-events-auto relative z-50"><LoginModal /></div>}

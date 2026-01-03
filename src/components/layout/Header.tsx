@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { useUserContext } from '@/contexts/UserContext';
 import { Menu, ChevronLeft, Home, Upload, Sun, Moon, User, LogOut } from 'lucide-react';
@@ -12,6 +12,7 @@ interface HeaderProps {
 export default function Header({ sidebarCollapsed, onSidebarToggle }: HeaderProps) {
   const { isDark, toggle } = useDarkMode();
   const { user, logout } = useUserContext();
+  const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
@@ -109,6 +110,7 @@ export default function Header({ sidebarCollapsed, onSidebarToggle }: HeaderProp
                       onClick={() => {
                         logout();
                         setShowUserMenu(false);
+                        navigate('/landing');
                       }}
                       className="flex w-full items-center gap-2 px-4 py-3 text-sm text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-all duration-300"
                     >
