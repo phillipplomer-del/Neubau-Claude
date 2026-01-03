@@ -72,7 +72,7 @@ const navigation: NavSection[] = [
     items: [
       { label: 'Force Tree', path: '/visualization/view1', icon: Network },
       { label: 'Force Timeline', path: '/visualization/view2', icon: PieChart },
-      { label: 'Ansicht 3', path: '/visualization/view3', icon: LineChart },
+      { label: 'Projekt-Treemap', path: '/visualization/view3', icon: LineChart },
       { label: 'Ansicht 4', path: '/visualization/view4', icon: Activity },
     ],
   },

@@ -93,6 +93,7 @@ function App() {
             <Route path="visualization">
               <Route path="view1" element={<ForceTreeView />} />
               <Route path="view2" element={<ForceTimelineView />} />
+              <Route path="view3" element={<ProjectManagementDashboard />} />
             </Route>
 
             {/* Catch all - redirect to home */}

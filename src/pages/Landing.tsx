@@ -146,21 +146,8 @@ export default function Landing() {
 
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const mouseRef = useRef({ x: 0, y: 0 });
   const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null);
-
-  // Track mouse position
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
-      // Reheat simulation when mouse moves
-      if (simulationRef.current) {
-        simulationRef.current.alpha(0.1).restart();
-      }
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+  const nodesRef = useRef<GraphNode[]>([]);
 
   useEffect(() => {
     if (!svgRef.current || !containerRef.current) return;
@@ -247,11 +234,44 @@ export default function Landing() {
         .attr('fill', refractionFill)
         .attr('stroke', 'none');
 
-      svg.append('path')
+      // Prism - clickable to shake the tree
+      const prismPath = svg.append('path')
         .attr('d', `M ${pTop.x} ${pTop.y} L ${pRight.x} ${pRight.y} L ${pLeft.x} ${pLeft.y} Z`)
         .attr('fill', 'url(#prism-grad)')
         .attr('stroke', prismStroke)
-        .attr('stroke-width', 1);
+        .attr('stroke-width', 1)
+        .style('cursor', 'pointer')
+        .style('pointer-events', 'all')
+        .on('click', () => {
+          // Expand the tree!
+          if (simulationRef.current && nodesRef.current.length > 0) {
+            // Boost simulation energy
+            simulationRef.current.alpha(0.6).restart();
+
+            // Give nodes a directional push outward (based on their position)
+            nodesRef.current.forEach(d => {
+              if (d.fx === undefined) {
+                const dx = d.x! - exitPointCenter.x;
+                // Push proportional to distance - further nodes get more push
+                const pushStrength = Math.min(dx / 200, 1) * 8;
+                d.vx = (d.vx || 0) + pushStrength + Math.random() * 3;
+                // Small vertical spread
+                d.vy = (d.vy || 0) + (Math.random() - 0.5) * 4;
+              }
+            });
+          }
+
+          // Visual feedback - soft edge glow
+          prismPath
+            .transition().duration(100)
+            .attr('stroke', isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.4)')
+            .attr('stroke-width', 2)
+            .attr('filter', 'url(#neon-glow)')
+            .transition().duration(500)
+            .attr('stroke', prismStroke)
+            .attr('stroke-width', 1)
+            .attr('filter', null);
+        });
 
       const beamLine = svg.append('line')
         .attr('x1', beamStart.x).attr('y1', beamStart.y)
@@ -291,37 +311,44 @@ export default function Landing() {
       // TAN(30 deg) ~= 0.577
       const MAX_TAN = 0.577;
 
-      // Mouse repulsion settings
-      const MOUSE_RADIUS = 120;
-      const MOUSE_STRENGTH = 80;
-
       const simulation = d3.forceSimulation(nodes)
-        // INCREASED DISTANCE slightly to 28 for better reach
-        .force('link', d3.forceLink<GraphNode, GraphLink>(links).id(d => d.id).distance(28))
-        .force('charge', d3.forceManyBody().strength(-8))
-        .force('collide', d3.forceCollide(2))
-        .force('mouse', () => {
-          // Mouse repulsion force
-          const mouse = mouseRef.current;
+        .force('link', d3.forceLink<GraphNode, GraphLink>(links).id(d => d.id).distance(45))
+        .force('charge', d3.forceManyBody().strength(-15))
+        .force('collide', d3.forceCollide(4))
+        .alphaTarget(0.03) // Keep simulation running forever
+        .alphaDecay(0.01)  // Slow decay for smooth movement
+        .force('coneRepulsion', () => {
+          // Repulsion force from cone edges
           nodes.forEach(d => {
-            if (d.fx !== undefined) return; // Skip fixed root nodes
+            if (d.fx !== undefined) return;
 
-            const dx = d.x! - mouse.x;
-            const dy = d.y! - mouse.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
+            const dx = d.x! - exitPointCenter.x;
+            const dy = d.y! - exitPointCenter.y;
+            const maxDy = dx * MAX_TAN;
 
-            if (dist < MOUSE_RADIUS && dist > 0) {
-              const force = ((MOUSE_RADIUS - dist) / MOUSE_RADIUS) * MOUSE_STRENGTH * 0.01;
-              d.vx! += (dx / dist) * force;
-              d.vy! += (dy / dist) * force;
+            if (maxDy > 0) {
+              // Distance to upper and lower cone edge
+              const distToUpper = maxDy - dy;
+              const distToLower = maxDy + dy;
+
+              // Repulsion strength (stronger when closer to edge)
+              const repulsionRange = 80;
+              if (distToUpper < repulsionRange) {
+                const force = Math.pow(1 - distToUpper / repulsionRange, 2) * 3;
+                d.vy = (d.vy || 0) - force; // Push down
+              }
+              if (distToLower < repulsionRange) {
+                const force = Math.pow(1 - distToLower / repulsionRange, 2) * 3;
+                d.vy = (d.vy || 0) + force; // Push up
+              }
             }
           });
         })
         .force('flow', alpha => {
           nodes.forEach(d => {
             if (d.fx === undefined) {
-              // MODERATE flow to reach end
-              d.vx = (d.vx || 0) + 0.6 * alpha;
+              // Stronger flow to reach screen edge
+              d.vx = (d.vx || 0) + 1.0 * alpha;
 
               const groupT = d.group / (groups - 1);
               // SPREAD = +/- 25 degrees (keep inside 30)
@@ -337,8 +364,9 @@ export default function Landing() {
           });
         });
 
-      // Store simulation reference for mouse interaction
+      // Store refs for click handler
       simulationRef.current = simulation;
+      nodesRef.current = nodes;
 
       const linkPath = svg.append('g').selectAll('path')
         .data(links).enter().append('path')
@@ -348,21 +376,8 @@ export default function Landing() {
 
       const nodeCircle = svg.append('g').selectAll('circle')
         .data(nodes).enter().append('circle')
-        .attr('r', d => d.radius * 0.6).attr('fill', d => d.color)
-        .attr('fill-opacity', 0).style('mix-blend-mode', 'screen')
-        .style('cursor', 'pointer')
-        .on('mouseenter', function(event, d) {
-          d3.select(this)
-            .transition().duration(150)
-            .attr('r', d.radius * 1.8)
-            .attr('filter', 'url(#neon-glow)');
-        })
-        .on('mouseleave', function(event, d) {
-          d3.select(this)
-            .transition().duration(300)
-            .attr('r', d.radius * 0.6)
-            .attr('filter', null);
-        });
+        .attr('r', d => d.radius * 1.0).attr('fill', d => d.color)
+        .attr('fill-opacity', 0).style('mix-blend-mode', 'screen');
 
       linkPath.transition().delay(d => d.delay || 1200).duration(800).attr('stroke-opacity', 0.8);
       nodeCircle.transition().delay(d => d.delay || 1200).duration(800).attr('fill-opacity', 0.9);
@@ -370,14 +385,17 @@ export default function Landing() {
       simulation.on('tick', () => {
         nodes.forEach(d => {
           if (d.fx === undefined) {
+            // Keep nodes moving right from exit point
             if (d.x! < exitPointCenter.x) d.x = exitPointCenter.x + 1;
+
+            // Hard boundary as safety net only
             const dx = d.x! - exitPointCenter.x;
             const dy = d.y! - exitPointCenter.y;
             const maxDy = dx * MAX_TAN;
+            if (Math.abs(dy) > maxDy) {
+              d.y = exitPointCenter.y + Math.sign(dy) * maxDy;
+            }
 
-            // Cone constraint
-            if (dy > maxDy) d.y = exitPointCenter.y + maxDy;
-            if (dy < -maxDy) d.y = exitPointCenter.y - maxDy;
             // Screen bounds
             if (d.x! > width - 20) d.x = width - 20;
           }
@@ -436,8 +454,8 @@ export default function Landing() {
         </div>
       </motion.nav>
 
-      <div ref={containerRef} className="absolute inset-0 z-10">
-        <svg ref={svgRef} width="100%" height="100%" style={{ pointerEvents: 'all' }} />
+      <div ref={containerRef} className="absolute inset-0 z-10 pointer-events-none">
+        <svg ref={svgRef} width="100%" height="100%" />
       </div>
 
       {showLogin && <div className="pointer-events-auto relative z-50"><LoginModal /></div>}
