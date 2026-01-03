@@ -312,10 +312,9 @@ export default function GanttTaskReactView({
     // We could add a viewDate state if needed
   };
 
-  // Auto-schedule tasks based on TASK_ORDER sequence
-  // Each task starts after the previous one ends
+  // Auto-schedule tasks based on dependencies and TASK_ORDER sequence
+  // Respects all four dependency types: FS, SS, FF, SF
   const handleAutoSchedule = useCallback(async () => {
-    // Get tasks with dates, sorted by TASK_ORDER
     const tasksWithDates = tasks.filter(t => t.startDate || t.dueDate);
 
     const getOrder = (code: string | undefined): number => {
@@ -330,42 +329,138 @@ export default function GanttTaskReactView({
 
     if (sortedTasks.length === 0) return;
 
-    // Start from the first task's start date, or today
-    let currentDate = sortedTasks[0].startDate?.toDate() || new Date();
-
-    // Default durations (in days) for different task types
-    const getDefaultDuration = (task: PMTask): number => {
-      if (task.taskType === 'milestone') return 0; // Milestones have no duration
-      // Calculate existing duration if available
+    // Get task duration in days
+    const getTaskDuration = (task: PMTask): number => {
+      if (task.taskType === 'milestone') return 0;
       if (task.startDate && task.dueDate) {
         const start = task.startDate.toDate();
         const end = task.dueDate.toDate();
-        const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        return Math.max(1, duration);
+        return Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
       }
-      return 5; // Default 5 days for tasks without duration
+      return 5; // Default 5 days
     };
 
-    // Schedule each task sequentially
+    // Map to store scheduled dates by task ID
+    const scheduledDates = new Map<string, { start: Date; end: Date }>();
+
+    // Schedule each task based on dependencies
     for (let i = 0; i < sortedTasks.length; i++) {
       const task = sortedTasks[i];
-      const duration = getDefaultDuration(task);
+      const duration = getTaskDuration(task);
 
-      const newStart = new Date(currentDate);
-      const newEnd = new Date(currentDate);
-      newEnd.setDate(newEnd.getDate() + duration);
+      let newStart: Date;
+      let newEnd: Date;
 
-      // Update the task with new dates
+      // Check if task has dependencies
+      if (task.dependencies && task.dependencies.length > 0) {
+        // Find the latest constraint from all dependencies
+        let latestStartConstraint = new Date(0);
+        let latestEndConstraint = new Date(0);
+        let hasStartConstraint = false;
+        let hasEndConstraint = false;
+
+        for (const dep of task.dependencies) {
+          // Find predecessor (by ID or code)
+          const predTask = sortedTasks.find(t =>
+            t.id === dep.predecessorId || t.code === dep.predecessorId
+          );
+          const predDates = predTask ? scheduledDates.get(predTask.id) : null;
+
+          if (!predDates) continue;
+
+          const lagMs = (dep.lagDays || 0) * 24 * 60 * 60 * 1000;
+
+          switch (dep.type) {
+            case 'FS': // Finish-to-Start: successor starts after predecessor ends
+              {
+                const constraint = new Date(predDates.end.getTime() + lagMs + 24 * 60 * 60 * 1000);
+                if (constraint > latestStartConstraint) {
+                  latestStartConstraint = constraint;
+                  hasStartConstraint = true;
+                }
+              }
+              break;
+
+            case 'SS': // Start-to-Start: successor starts when predecessor starts
+              {
+                const constraint = new Date(predDates.start.getTime() + lagMs);
+                if (constraint > latestStartConstraint) {
+                  latestStartConstraint = constraint;
+                  hasStartConstraint = true;
+                }
+              }
+              break;
+
+            case 'FF': // Finish-to-Finish: successor ends when predecessor ends
+              {
+                const constraint = new Date(predDates.end.getTime() + lagMs);
+                if (constraint > latestEndConstraint) {
+                  latestEndConstraint = constraint;
+                  hasEndConstraint = true;
+                }
+              }
+              break;
+
+            case 'SF': // Start-to-Finish: successor ends when predecessor starts
+              {
+                const constraint = new Date(predDates.start.getTime() + lagMs);
+                if (constraint > latestEndConstraint) {
+                  latestEndConstraint = constraint;
+                  hasEndConstraint = true;
+                }
+              }
+              break;
+          }
+        }
+
+        // Determine start and end based on constraints
+        if (hasEndConstraint && !hasStartConstraint) {
+          // Only end constraint (FF or SF) - calculate start from end
+          newEnd = latestEndConstraint;
+          newStart = new Date(newEnd.getTime() - duration * 24 * 60 * 60 * 1000);
+        } else if (hasStartConstraint) {
+          // Start constraint (FS or SS) - use it
+          newStart = latestStartConstraint;
+          newEnd = new Date(newStart.getTime() + duration * 24 * 60 * 60 * 1000);
+
+          // If we also have end constraint, ensure we meet both
+          if (hasEndConstraint && newEnd < latestEndConstraint) {
+            newEnd = latestEndConstraint;
+          }
+        } else {
+          // No valid dependencies, use previous task's end or today
+          const prevTask = i > 0 ? sortedTasks[i - 1] : null;
+          const prevDates = prevTask ? scheduledDates.get(prevTask.id) : null;
+          newStart = prevDates
+            ? new Date(prevDates.end.getTime() + 24 * 60 * 60 * 1000)
+            : sortedTasks[0].startDate?.toDate() || new Date();
+          newEnd = new Date(newStart.getTime() + duration * 24 * 60 * 60 * 1000);
+        }
+      } else {
+        // No dependencies - use previous task's end (sequential scheduling)
+        const prevTask = i > 0 ? sortedTasks[i - 1] : null;
+        const prevDates = prevTask ? scheduledDates.get(prevTask.id) : null;
+
+        if (i === 0) {
+          // First task - keep its start date or use today
+          newStart = sortedTasks[0].startDate?.toDate() || new Date();
+        } else if (prevDates) {
+          // Start after previous task ends (+ 1 day gap)
+          newStart = new Date(prevDates.end.getTime() + 24 * 60 * 60 * 1000);
+        } else {
+          newStart = new Date();
+        }
+        newEnd = new Date(newStart.getTime() + duration * 24 * 60 * 60 * 1000);
+      }
+
+      // Store scheduled dates
+      scheduledDates.set(task.id, { start: newStart, end: newEnd });
+
+      // Update the task
       await onUpdateTask(task.id, {
         startDate: newStart,
         dueDate: newEnd,
       });
-
-      // Next task starts after this one ends (+ 1 day gap for clarity)
-      currentDate = new Date(newEnd);
-      if (task.taskType !== 'milestone') {
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
     }
   }, [tasks, onUpdateTask]);
 

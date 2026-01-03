@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, User, Flag, Tag, CheckSquare, Plus, Trash2, MessageSquare, Link2 } from 'lucide-react';
-import type { PMTask, PMColumn, PMPriority, PMLabel, PMChecklistItem, PMTaskDependency, UpdateTaskInput } from '@/types/planner';
+import type { PMTask, PMColumn, PMPriority, PMLabel, PMChecklistItem, PMTaskDependency, PMDependencyType, UpdateTaskInput } from '@/types/planner';
 import { PRIORITY_COLORS, PRIORITY_LABELS, DEFAULT_LABELS, DEPENDENCY_TYPE_LABELS } from '@/types/planner';
+
+// Descriptions for dependency types
+const DEPENDENCY_TYPE_DESCRIPTIONS: Record<PMDependencyType, string> = {
+  FS: 'Task kann erst beginnen, wenn Vorgänger abgeschlossen ist',
+  SS: 'Task kann beginnen, sobald Vorgänger begonnen hat',
+  FF: 'Task kann erst enden, wenn Vorgänger abgeschlossen ist',
+  SF: 'Task kann erst enden, wenn Vorgänger begonnen hat',
+};
 import { addTaskComment, subscribeToTaskComments, deleteTaskComment, type PMTaskComment } from '@/lib/firebase/plannerRepository';
 
 interface TaskModalProps {
@@ -104,6 +112,14 @@ export default function TaskModal({
     setDependencies(
       dependencies.map(d =>
         d.predecessorId === predecessorId ? { ...d, lagDays } : d
+      )
+    );
+  };
+
+  const handleUpdateDependencyType = (predecessorId: string, type: PMDependencyType) => {
+    setDependencies(
+      dependencies.map(d =>
+        d.predecessorId === predecessorId ? { ...d, type } : d
       )
     );
   };
@@ -511,40 +527,68 @@ export default function TaskModal({
               </div>
 
               {/* Dependencies List */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {dependencies.map((dep) => {
                   const predTask = allTasks.find(t => t.id === dep.predecessorId || t.code === dep.predecessorId);
                   return (
                     <div
                       key={dep.predecessorId}
-                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg group"
+                      className="p-3 bg-muted/50 rounded-lg border border-border/50"
                     >
-                      <Link2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium truncate block">
-                          {predTask?.code ? `[${predTask.code}] ` : ''}{predTask?.title || dep.predecessorId}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {DEPENDENCY_TYPE_LABELS[dep.type]} {dep.lagDays !== 0 && `(+${dep.lagDays} Tage)`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          value={dep.lagDays}
-                          onChange={(e) => handleUpdateDependencyLag(dep.predecessorId, parseInt(e.target.value) || 0)}
-                          className="w-16 px-2 py-1 bg-input border border-border rounded text-xs text-center"
-                          title="Verzögerung in Tagen"
-                          min="0"
-                        />
-                        <span className="text-xs text-muted-foreground">Tage</span>
+                      {/* Header row with task name and delete button */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Link2 className="h-4 w-4 text-primary flex-shrink-0" />
+                          <span className="text-sm font-medium truncate">
+                            {predTask?.code ? `[${predTask.code}] ` : ''}{predTask?.title || dep.predecessorId}
+                          </span>
+                        </div>
                         <button
                           onClick={() => handleRemoveDependency(dep.predecessorId)}
                           className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                          title="Abhängigkeit entfernen"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
+
+                      {/* Settings row */}
+                      <div className="flex flex-wrap items-center gap-3 text-xs">
+                        {/* Dependency Type */}
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-muted-foreground">Typ:</label>
+                          <select
+                            value={dep.type}
+                            onChange={(e) => handleUpdateDependencyType(dep.predecessorId, e.target.value as PMDependencyType)}
+                            className="px-2 py-1 bg-input border border-border rounded text-xs"
+                            title={DEPENDENCY_TYPE_DESCRIPTIONS[dep.type]}
+                          >
+                            {Object.entries(DEPENDENCY_TYPE_LABELS).map(([value, label]) => (
+                              <option key={value} value={value}>{label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Lag/Lead Time */}
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-muted-foreground">
+                            {dep.lagDays >= 0 ? 'Verzögerung:' : 'Vorlauf:'}
+                          </label>
+                          <input
+                            type="number"
+                            value={dep.lagDays}
+                            onChange={(e) => handleUpdateDependencyLag(dep.predecessorId, parseInt(e.target.value) || 0)}
+                            className="w-14 px-2 py-1 bg-input border border-border rounded text-xs text-center"
+                            title="Positive Werte = Verzögerung, Negative = Vorlaufzeit"
+                          />
+                          <span className="text-muted-foreground">Tage</span>
+                        </div>
+                      </div>
+
+                      {/* Type description */}
+                      <p className="text-[10px] text-muted-foreground mt-1.5 italic">
+                        {DEPENDENCY_TYPE_DESCRIPTIONS[dep.type]}
+                      </p>
                     </div>
                   );
                 })}
@@ -556,9 +600,17 @@ export default function TaskModal({
                 </p>
               )}
 
-              <p className="text-xs text-muted-foreground">
-                Abhängigkeiten definieren, welche Aufgaben abgeschlossen sein müssen, bevor diese beginnen kann.
-              </p>
+              {/* Legend */}
+              <div className="mt-4 p-3 bg-muted/30 rounded-lg text-xs space-y-1.5">
+                <p className="font-medium text-foreground mb-2">Abhängigkeitstypen:</p>
+                <p><span className="font-medium">EA (Ende-Anfang):</span> Vorgänger muss enden, bevor diese Task beginnt</p>
+                <p><span className="font-medium">AA (Anfang-Anfang):</span> Beide Tasks können gleichzeitig beginnen</p>
+                <p><span className="font-medium">EE (Ende-Ende):</span> Beide Tasks müssen gleichzeitig enden</p>
+                <p><span className="font-medium">AE (Anfang-Ende):</span> Vorgänger muss beginnen, bevor diese Task enden kann</p>
+                <p className="mt-2 text-muted-foreground">
+                  Negative Tage = Vorlaufzeit (Task kann früher starten)
+                </p>
+              </div>
             </div>
           )}
 
