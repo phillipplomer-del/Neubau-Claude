@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { UserProvider } from './contexts/UserContext';
-import LoginModal from './components/auth/LoginModal';
+import { UserProvider, useUserContext } from './contexts/UserContext';
 import Layout from './components/layout/Layout';
 import Landing from './pages/Landing';
 import Home from './pages/Home';
@@ -38,16 +37,27 @@ import DataComparisonDashboard from './pages/dataComparison/Dashboard';
 import ForceTreeView from './pages/visualization/ForceTreeView';
 import ForceTimelineView from './pages/visualization/ForceTimelineView';
 
+// Protected route wrapper - shows Landing if not logged in
+function ProtectedRoutes() {
+  const { isLoggedIn } = useUserContext();
+
+  if (!isLoggedIn) {
+    return <Landing />;
+  }
+
+  return <Layout />;
+}
+
 function App() {
   return (
     <UserProvider>
       <BrowserRouter>
         <Routes>
-          {/* Landing page - outside of Layout (no sidebar/header) */}
+          {/* Landing page - also accessible directly */}
           <Route path="/landing" element={<Landing />} />
 
-          {/* Main app with Layout */}
-          <Route path="/" element={<><LoginModal /><Layout /></>}>
+          {/* Main app with Layout - protected */}
+          <Route path="/" element={<ProtectedRoutes />}>
             <Route index element={<Home />} />
             <Route path="import" element={<Import />} />
 
