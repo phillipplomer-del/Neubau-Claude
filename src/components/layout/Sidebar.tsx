@@ -15,6 +15,7 @@ import {
   Activity,
   Kanban,
   Calculator,
+  Clock,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -59,6 +60,12 @@ const navigation: NavSection[] = [
       { label: 'Projekte', path: '/projects/list', icon: Folders },
       { label: 'Planner', path: '/planner', icon: Kanban },
       { label: 'Einzelcontrolling', path: '/einzelcontrolling', icon: Calculator },
+    ],
+  },
+  {
+    title: 'Zeiterfassung',
+    items: [
+      { label: 'Übersicht', path: '/time-tracking', icon: Clock },
     ],
   },
   {

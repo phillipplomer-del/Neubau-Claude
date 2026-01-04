@@ -37,6 +37,9 @@ import DataComparisonDashboard from './pages/dataComparison/Dashboard';
 import ForceTreeView from './pages/visualization/ForceTreeView';
 import ForceTimelineView from './pages/visualization/ForceTimelineView';
 
+// Time Tracking pages
+import TimeTrackingDashboard from './pages/timeTracking/Dashboard';
+
 // Protected route wrapper - shows Landing if not logged in
 function ProtectedRoutes() {
   const { isLoggedIn } = useUserContext();
@@ -93,6 +96,9 @@ function App() {
 
             {/* Einzelcontrolling routes */}
             <Route path="einzelcontrolling" element={<EinzelcontrollingView />} />
+
+            {/* Time Tracking routes */}
+            <Route path="time-tracking" element={<TimeTrackingDashboard />} />
 
             {/* Data Comparison routes */}
             <Route path="datacomparison">
