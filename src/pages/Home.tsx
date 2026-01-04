@@ -1,22 +1,13 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '@/components/ui/Card';
 import StatCard from '@/components/ui/StatCard';
 import { useUserContext } from '@/contexts/UserContext';
 import { useHomeKPIs } from '@/hooks/useHomeKPIs';
-import { Package, Factory, FolderKanban, Clock, TrendingUp, AlertTriangle, Euro, Eye } from 'lucide-react';
+import { Package, Factory, FolderKanban, AlertTriangle, Euro, Eye } from 'lucide-react';
 
 export default function Home() {
   const { user } = useUserContext();
-  const [currentTime, setCurrentTime] = useState(new Date());
   const { offenerUmsatz, anzahlProjekte, kritischeProjekte, beobachteteProjekte, loading: kpisLoading } = useHomeKPIs();
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-    return () => clearInterval(timer);
-  }, []);
 
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
@@ -28,51 +19,19 @@ export default function Home() {
     return `${value.toFixed(0)} €`;
   };
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('de-DE', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   return (
     <div className="space-y-7">
       {/* Welcome Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1
-            className="text-[26px] font-bold text-foreground"
-            style={{ fontFamily: 'var(--font-display)', lineHeight: 1.2 }}
-          >
-            Willkommen{user?.firstName ? `, ${user.firstName}` : ' bei PVCS Prism'}
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Ihr Business Intelligence Dashboard für Sales, Produktion und Projektmanagement
-          </p>
-        </div>
-        <div className="text-right">
-          <div className="flex items-center gap-2 text-foreground">
-            <div className="w-8 h-8 rounded-full bg-card-muted flex items-center justify-center">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <span
-              className="text-xl font-semibold"
-              style={{ fontFamily: 'var(--font-display)' }}
-            >
-              {formatTime(currentTime)}
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">{formatDate(currentTime)}</p>
-        </div>
+      <div>
+        <h1
+          className="text-[26px] font-bold text-foreground"
+          style={{ fontFamily: 'var(--font-display)', lineHeight: 1.2 }}
+        >
+          Willkommen{user?.firstName ? `, ${user.firstName}` : ' bei PVCS Prism'}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Ihr Business Intelligence Dashboard für Sales, Produktion und Projektmanagement
+        </p>
       </div>
 
       {/* App Description Card */}
