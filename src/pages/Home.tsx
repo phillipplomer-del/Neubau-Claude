@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import Card from '@/components/ui/Card';
 import StatCard from '@/components/ui/StatCard';
 import { useUserContext } from '@/contexts/UserContext';
-import { Package, Factory, FolderKanban, Clock, TrendingUp, AlertTriangle, Euro } from 'lucide-react';
+import { useHomeKPIs } from '@/hooks/useHomeKPIs';
+import { Package, Factory, FolderKanban, Clock, TrendingUp, AlertTriangle, Euro, Eye } from 'lucide-react';
 
 export default function Home() {
   const { user } = useUserContext();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const { offenerUmsatz, anzahlProjekte, kritischeProjekte, beobachteteProjekte, loading: kpisLoading } = useHomeKPIs();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -15,6 +17,16 @@ export default function Home() {
     }, 60000);
     return () => clearInterval(timer);
   }, []);
+
+  const formatCurrency = (value: number) => {
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)} Mio €`;
+    }
+    if (value >= 1000) {
+      return `${(value / 1000).toFixed(0)} T€`;
+    }
+    return `${value.toFixed(0)} €`;
+  };
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('de-DE', {
@@ -75,27 +87,27 @@ export default function Home() {
       {/* KPI Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
-          icon={<Package className="h-5 w-5" />}
-          value="--"
-          label="Offene Lieferungen"
+          icon={<Euro className="h-5 w-5" />}
+          value={kpisLoading ? '...' : formatCurrency(offenerUmsatz)}
+          label="Offener Umsatz"
           gradient={1}
         />
         <StatCard
-          icon={<AlertTriangle className="h-5 w-5" />}
-          value="--"
-          label="Kritische Aufträge"
-          gradient={2}
-        />
-        <StatCard
-          icon={<TrendingUp className="h-5 w-5" />}
-          value="--"
-          label="Aktive Projekte"
+          icon={<FolderKanban className="h-5 w-5" />}
+          value={kpisLoading ? '...' : String(anzahlProjekte)}
+          label="Projekte"
           gradient={3}
         />
         <StatCard
-          icon={<Euro className="h-5 w-5" />}
-          value="--"
-          label="Offener Umsatz"
+          icon={<AlertTriangle className="h-5 w-5" />}
+          value={kpisLoading ? '...' : String(kritischeProjekte)}
+          label="Kritisch"
+          gradient={2}
+        />
+        <StatCard
+          icon={<Eye className="h-5 w-5" />}
+          value={kpisLoading ? '...' : String(beobachteteProjekte)}
+          label="Beobachtet"
           gradient={4}
         />
       </div>
