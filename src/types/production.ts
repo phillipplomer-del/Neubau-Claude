@@ -10,35 +10,44 @@ export interface ProductionEntry extends BaseEntry {
 
   // Planning information
   planningNumber?: string;
-  workOrderNumber?: string;
+  workOrderNumber?: string;      // PaNummer
+  mainWorkOrderNumber?: string;  // HauptPaNummer
 
   // Product information
   productDescription?: string;
   quantity?: number;
   unit?: string;
 
-  // Dates (Soll = Planned, Ist = Actual)
-  plannedStartDate?: Date; // Soll-Start
-  actualStartDate?: Date; // Ist-Start
-  plannedEndDate?: Date; // Soll-Ende
-  actualEndDate?: Date; // Ist-Ende
+  // Dates (on PA level)
+  plannedStartDate?: Date; // StartDatum
+  plannedEndDate?: Date;   // EndDatum
+  actualStartDate?: Date;
+  actualEndDate?: Date;
 
-  // Resource planning
-  plannedHours?: number; // Soll-Stunden
-  actualHours?: number; // Ist-Stunden
+  // Resource planning (Soll-Ist)
+  plannedHours?: number;   // Soll
+  actualHours?: number;    // Ist
+  plannedCosts?: number;   // Soll €
+  actualCosts?: number;    // Ist €
   resourceName?: string;
   machineId?: string;
 
-  // Progress
-  completionPercentage?: number;
-  status?: 'planned' | 'in_progress' | 'delayed' | 'completed' | 'on_hold';
+  // Progress & Status
+  completionPercentage?: number; // % Ist
+  status?: string;               // PA Status (open/closed)
+  active?: boolean | string;     // Aktiv (X = active)
+
+  // Grouping
+  group?: string;                // Gruppe
+
+  // Operation (Arbeitsgang)
+  operationNumber?: string;      // Arbeitsgangnummer
+  notes?: string;                // DescriptionText (Arbeitsgang-Beschreibung)
 
   // Variance analysis
-  dateVariance?: number; // days difference
-  hoursVariance?: number; // hours difference
+  dateVariance?: number;
+  hoursVariance?: number;
 
-  // Additional fields
-  notes?: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
 }
 
@@ -63,4 +72,45 @@ export interface GanttTask {
   dependencies?: string[]; // IDs of dependent tasks
   custom_class?: string; // For styling
   productionEntry: ProductionEntry;
+}
+
+// Dashboard KPIs
+export interface ProductionDashboardKPIs {
+  // Termin-KPIs (Priorität)
+  onTimeDeliveryRate: number;      // Termintreue %
+  overdueCount: number;            // Anzahl überfällig
+  averageDelayDays: number;        // Ø Verspätung in Tagen
+  atRiskCount: number;             // Gefährdete Aufträge (<3 Tage Puffer)
+
+  // Sekundäre KPIs
+  openOrders: number;              // Offene Aufträge
+  completedThisWeek: number;       // Diese Woche abgeschlossen
+  hoursVariance: number;           // Stunden-Abweichung (Ist - Soll)
+  backlogHours: number;            // Rückstand in Stunden
+
+  // Vorwochen-Deltas
+  onTimeDeliveryRateChange: number;
+  overdueCountChange: number;
+  averageDelayDaysChange: number;
+  openOrdersChange: number;
+}
+
+export type CriticalOrderStatus = 'overdue' | 'at_risk' | 'on_track';
+
+export interface CriticalOrder {
+  id: string;
+  projektnummer: string;
+  name: string;
+  dueDate: Date;
+  delayDays: number;
+  status: CriticalOrderStatus;
+  hoursVariance?: number;
+}
+
+// Weekly trend data point
+export interface ProductionTrendDataPoint {
+  week: string;           // "KW01", "KW02", etc.
+  onTimeRate: number;     // Termintreue %
+  overdueCount: number;
+  openOrders: number;
 }

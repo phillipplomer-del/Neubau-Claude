@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { UserProvider } from './contexts/UserContext';
-import LoginModal from './components/auth/LoginModal';
+import { UserProvider, useUserContext } from './contexts/UserContext';
 import Layout from './components/layout/Layout';
+import Landing from './pages/Landing';
 import Home from './pages/Home';
 import Import from './pages/Import';
 
@@ -23,16 +23,41 @@ import ProjectList from './pages/projectManagement/ProjectList';
 import ProjectDetails from './pages/projectManagement/ProjectDetails';
 import ControllingView from './pages/projectManagement/ControllingView';
 
+// Planner pages
+import PlannerDashboard from './pages/projectManagement/planner/PlannerDashboard';
+import BoardView from './pages/projectManagement/planner/BoardView';
+
+// Einzelcontrolling pages
+import EinzelcontrollingView from './pages/projectManagement/einzelcontrolling/EinzelcontrollingView';
+
 // Data Comparison pages
 import DataComparisonDashboard from './pages/dataComparison/Dashboard';
+
+// Visualization pages
+import ForceTreeView from './pages/visualization/ForceTreeView';
+import ForceTimelineView from './pages/visualization/ForceTimelineView';
+
+// Protected route wrapper - shows Landing if not logged in
+function ProtectedRoutes() {
+  const { isLoggedIn } = useUserContext();
+
+  if (!isLoggedIn) {
+    return <Landing />;
+  }
+
+  return <Layout />;
+}
 
 function App() {
   return (
     <UserProvider>
       <BrowserRouter>
-        <LoginModal />
         <Routes>
-          <Route path="/" element={<Layout />}>
+          {/* Landing page - also accessible directly */}
+          <Route path="/landing" element={<Landing />} />
+
+          {/* Main app with Layout - protected */}
+          <Route path="/" element={<ProtectedRoutes />}>
             <Route index element={<Home />} />
             <Route path="import" element={<Import />} />
 
@@ -60,9 +85,25 @@ function App() {
               <Route path="controlling" element={<ControllingView />} />
             </Route>
 
+            {/* Planner routes */}
+            <Route path="planner">
+              <Route index element={<PlannerDashboard />} />
+              <Route path=":boardId" element={<BoardView />} />
+            </Route>
+
+            {/* Einzelcontrolling routes */}
+            <Route path="einzelcontrolling" element={<EinzelcontrollingView />} />
+
             {/* Data Comparison routes */}
             <Route path="datacomparison">
               <Route index element={<DataComparisonDashboard />} />
+            </Route>
+
+            {/* Visualization routes */}
+            <Route path="visualization">
+              <Route path="view1" element={<ForceTreeView />} />
+              <Route path="view2" element={<ForceTimelineView />} />
+              <Route path="view3" element={<ProjectManagementDashboard />} />
             </Route>
 
             {/* Catch all - redirect to home */}

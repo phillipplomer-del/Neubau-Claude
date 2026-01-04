@@ -7,6 +7,7 @@ import { useState, useCallback } from 'react';
 import type { Department } from '@/types/common';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import { CloudUpload, FileSpreadsheet, X, Check, AlertCircle } from 'lucide-react';
 
 interface FileWithDepartment {
   file: File;
@@ -56,7 +57,7 @@ export default function MultiFileUploader({ onFilesSelected }: MultiFileUploader
       status: 'pending' as const,
     }));
 
-    setSelectedFiles(filesWithDept);
+    setSelectedFiles((prev) => [...prev, ...filesWithDept]);
   }, []);
 
   const handleDragEnter = (e: React.DragEvent) => {
@@ -115,24 +116,24 @@ export default function MultiFileUploader({ onFilesSelected }: MultiFileUploader
 
   const getDepartmentLabel = (dept: Department | null): string => {
     if (!dept) return 'Nicht erkannt';
-    if (dept === 'sales') return 'Sales (Offene Lieferungen)';
-    if (dept === 'production') return 'Produktion (Soll-Ist)';
-    if (dept === 'projectManagement') return 'Projektmanagement (Controlling)';
+    if (dept === 'sales') return 'Sales';
+    if (dept === 'production') return 'Produktion';
+    if (dept === 'projectManagement') return 'Controlling';
     return dept;
   };
 
   const getDepartmentColor = (dept: Department | null): string => {
-    if (!dept) return 'bg-gray-100 text-gray-700';
-    if (dept === 'sales') return 'bg-blue-100 text-blue-700';
-    if (dept === 'production') return 'bg-green-100 text-green-700';
-    if (dept === 'projectManagement') return 'bg-purple-100 text-purple-700';
-    return 'bg-gray-100 text-gray-700';
+    if (!dept) return 'bg-gray-100 text-gray-700 border-gray-200';
+    if (dept === 'sales') return 'bg-blue-50 text-blue-700 border-blue-200';
+    if (dept === 'production') return 'bg-green-50 text-green-700 border-green-200';
+    if (dept === 'projectManagement') return 'bg-purple-50 text-purple-700 border-purple-200';
+    return 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
   const allFilesHaveDepartment = selectedFiles.length > 0 && selectedFiles.every((f) => f.department !== null);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       {/* Drop Zone */}
       <Card>
         <CardHeader>
@@ -141,11 +142,11 @@ export default function MultiFileUploader({ onFilesSelected }: MultiFileUploader
         <CardContent>
           <div
             className={`
-              relative rounded-lg border-2 border-dashed p-12 text-center transition-colors
-              ${
-                isDragging
-                  ? 'border-primary-500 bg-primary-50'
-                  : 'border-gray-300 bg-gray-50 hover:border-primary-400'
+              relative group cursor-pointer
+              rounded-xl border-2 border-dashed p-12 text-center transition-all duration-300
+              ${isDragging
+                ? 'border-primary bg-primary/5 scale-[1.01]'
+                : 'border-border/50 hover:border-primary/50 hover:bg-muted/50'
               }
             `}
             onDragEnter={handleDragEnter}
@@ -162,126 +163,131 @@ export default function MultiFileUploader({ onFilesSelected }: MultiFileUploader
               onChange={handleFileInput}
             />
 
-            <div className="space-y-4">
-              <div className="text-6xl">📊</div>
+            <label htmlFor="file-upload" className="cursor-pointer space-y-4">
+              <div className={`
+                mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500
+                ${isDragging ? 'bg-primary/20 scale-110' : 'bg-muted group-hover:bg-primary/10 group-hover:scale-105'}
+              `}>
+                <CloudUpload className={`w-10 h-10 transition-colors duration-300 ${isDragging ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />
+              </div>
+
               <div>
-                <p className="text-lg font-semibold text-gray-900">
-                  Dateien hierher ziehen oder klicken
+                <p className="text-xl font-bold gradient-text" style={{ fontFamily: 'var(--font-display)' }}>
+                  Dateien hier ablegen
                 </p>
-                <p className="mt-1 text-sm text-gray-600">
-                  Sie können alle drei Excel-Dateien gleichzeitig hochladen
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Ziehen Sie Ihre Excel-Dateien einfach hierher oder klicken Sie zum Auswählen.
+                  <br />
+                  <span className="opacity-60 text-xs">Unterstützt .xlsx, .xlsm, .xls</span>
                 </p>
               </div>
 
-              <label htmlFor="file-upload">
-                <Button as="span" variant="outline">
-                  Dateien auswählen
-                </Button>
-              </label>
-
-              <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
-                <div className="flex items-center gap-1">
-                  <span className="inline-block h-2 w-2 rounded-full bg-blue-500"></span>
+              <div className="pt-4 flex items-center justify-center gap-6 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card-muted border border-border/50">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
                   <span>Sales</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="inline-block h-2 w-2 rounded-full bg-green-500"></span>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card-muted border border-border/50">
+                  <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
                   <span>Produktion</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="inline-block h-2 w-2 rounded-full bg-purple-500"></span>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card-muted border border-border/50">
+                  <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]"></div>
                   <span>Controlling</span>
                 </div>
               </div>
-            </div>
+            </label>
           </div>
         </CardContent>
       </Card>
 
-      {/* Selected Files */}
-      {selectedFiles.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Ausgewählte Dateien ({selectedFiles.length})</CardTitle>
-              <Button
-                onClick={handleImport}
-                disabled={!allFilesHaveDepartment}
-              >
-                Import starten
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {selectedFiles.map((fileWithDept, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4"
-                >
-                  {/* File Icon */}
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded bg-gray-100 text-xl">
-                    📄
-                  </div>
+      {/* Selected Files List */}
+      <div className={`transition-all duration-500 ${selectedFiles.length > 0 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 hidden'}`}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2" style={{ fontFamily: 'var(--font-display)' }}>
+            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs">
+              {selectedFiles.length}
+            </span>
+            Ausgewählte Dateien
+          </h3>
 
-                  {/* File Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate font-medium text-gray-900">
-                      {fileWithDept.file.name}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {(fileWithDept.file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
+          <Button
+            onClick={handleImport}
+            disabled={!allFilesHaveDepartment}
+            className={`transition-all duration-300 ${allFilesHaveDepartment ? 'shadow-[var(--shadow-glow)] hover:scale-105' : 'opacity-50'}`}
+          >
+            <Check className="w-4 h-4 mr-2" />
+            Import starten
+          </Button>
+        </div>
 
-                  {/* Department Selection */}
-                  <div className="flex-shrink-0">
-                    <select
-                      value={fileWithDept.department || ''}
-                      onChange={(e) => updateDepartment(index, e.target.value as Department)}
-                      className="rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                    >
-                      <option value="">Bitte wählen...</option>
-                      <option value="sales">Sales (Offene Lieferungen)</option>
-                      <option value="production">Produktion (Soll-Ist)</option>
-                      <option value="projectManagement">Controlling</option>
-                    </select>
-                  </div>
+        <div className="grid gap-3">
+          {selectedFiles.map((fileWithDept, index) => (
+            <div
+              key={index}
+              className="group relative flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:border-primary/20"
+            >
+              {/* File Icon */}
+              <div className={`
+                flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg transition-colors duration-300
+                ${fileWithDept.department ? getDepartmentColor(fileWithDept.department).split(' ')[0] : 'bg-muted'}
+              `}>
+                <FileSpreadsheet className={`h-6 w-6 ${fileWithDept.department ? 'text-current' : 'text-muted-foreground'}`} />
+              </div>
 
-                  {/* Department Badge */}
-                  {fileWithDept.department && (
-                    <div
-                      className={`
-                        flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium
-                        ${getDepartmentColor(fileWithDept.department)}
-                      `}
-                    >
-                      {getDepartmentLabel(fileWithDept.department)}
-                    </div>
-                  )}
-
-                  {/* Remove Button */}
-                  <button
-                    onClick={() => removeFile(index)}
-                    className="flex-shrink-0 text-gray-400 hover:text-red-600 transition-colors"
-                    title="Entfernen"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {!allFilesHaveDepartment && (
-              <div className="mt-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3">
-                <p className="text-sm text-yellow-800">
-                  Bitte wählen Sie für alle Dateien eine Abteilung aus.
+              {/* File Info */}
+              <div className="flex-1 min-w-0">
+                <p className="truncate font-semibold text-foreground">
+                  {fileWithDept.file.name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {(fileWithDept.file.size / 1024 / 1024).toFixed(2)} MB • Excel Arbeitsmappe
                 </p>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+
+              {/* Department Selection */}
+              <div className="flex-shrink-0 min-w-[200px]">
+                <div className="relative">
+                  <select
+                    value={fileWithDept.department || ''}
+                    onChange={(e) => updateDepartment(index, e.target.value as Department)}
+                    className={`
+                      w-full appearance-none rounded-lg border px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all
+                      ${getDepartmentColor(fileWithDept.department)}
+                    `}
+                  >
+                    <option value="">Abteilung wählen...</option>
+                    <option value="sales">Sales (Offene Lief.)</option>
+                    <option value="production">Produktion (Soll-Ist)</option>
+                    <option value="projectManagement">Controlling</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-current opacity-50">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Remove Button */}
+              <button
+                onClick={() => removeFile(index)}
+                className="flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full hover:bg-red-50 text-muted-foreground hover:text-red-500 transition-colors"
+                title="Entfernen"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {!allFilesHaveDepartment && (
+          <div className="mt-4 flex items-center gap-3 rounded-lg bg-yellow-50 text-yellow-800 border border-yellow-200 p-4 animate-in fade-in slide-in-from-top-2">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <p className="text-sm font-medium">
+              Bitte weisen Sie jeder Datei eine Abteilung zu, um fortzufahren.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

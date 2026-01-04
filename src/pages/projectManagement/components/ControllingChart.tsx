@@ -1,10 +1,10 @@
 /**
  * Controlling Chart Component
  * Shows projects or turnover over time with year filter
- * Modern design with purple gradient fills
+ * Modern design with gradient fills - adapts to dark mode
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   XAxis,
   YAxis,
@@ -25,15 +25,52 @@ interface ControllingChartProps {
 type ViewMode = 'projects' | 'turnover';
 type TimeRange = 'last7' | 'last30' | 'last3months' | 'all';
 
-// Purple gradient colors from design
-const CATEGORY_COLORS = {
-  A: 'hsl(238.73, 83.53%, 66.67%)',  // primary purple
-  B: 'hsl(243.4, 75.36%, 58.63%)',   // chart-2
-  C: 'hsl(244.52, 57.94%, 50.59%)',  // chart-3
+// Light mode colors (Aqua)
+const CATEGORY_COLORS_LIGHT = {
+  A: '#00E097',  // mint (primary)
+  B: '#00DEE0',  // cyan
+  C: '#0050E0',  // blue
 };
-const PRIMARY_COLOR = 'hsl(238.73, 83.53%, 66.67%)';
+const PRIMARY_COLOR_LIGHT = '#00E097';
+
+// Dark mode colors (Orange → Gold → Green)
+const CATEGORY_COLORS_DARK = {
+  A: '#FFAA80',  // orange
+  B: '#E0BD00',  // gold
+  C: '#80FF80',  // green
+};
+const PRIMARY_COLOR_DARK = '#E0BD00'; // gold as primary
+
+// Hook to detect dark mode
+function useDarkMode() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+
+    checkDarkMode();
+
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return isDark;
+}
 
 export default function ControllingChart({ data, years }: ControllingChartProps) {
+  const isDark = useDarkMode();
+
+  // Select colors based on theme
+  const CATEGORY_COLORS = isDark ? CATEGORY_COLORS_DARK : CATEGORY_COLORS_LIGHT;
+  const PRIMARY_COLOR = isDark ? PRIMARY_COLOR_DARK : PRIMARY_COLOR_LIGHT;
+
   const [viewMode, setViewMode] = useState<ViewMode>('projects');
   const [selectedYear, setSelectedYear] = useState<number | 'all'>('all');
   const [timeRange, setTimeRange] = useState<TimeRange>('all');

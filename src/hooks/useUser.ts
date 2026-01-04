@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 
-const STORAGE_KEY = 'galadriel_user';
+const STORAGE_KEY = 'pvcs_prism_user';
 
 export interface UserData {
   fullName: string;

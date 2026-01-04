@@ -21,6 +21,7 @@ export interface UseSalesDataReturn {
 function deserializeSalesEntry(entry: SalesEntry): SalesEntry {
   return {
     ...entry,
+    bookingDate: entry.bookingDate ? new Date(entry.bookingDate) : undefined,
     deliveryDate: entry.deliveryDate ? new Date(entry.deliveryDate) : undefined,
     requestedDeliveryDate: entry.requestedDeliveryDate ? new Date(entry.requestedDeliveryDate) : undefined,
     confirmedDeliveryDate: entry.confirmedDeliveryDate ? new Date(entry.confirmedDeliveryDate) : undefined,

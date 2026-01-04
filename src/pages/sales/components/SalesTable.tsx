@@ -91,7 +91,7 @@ export default function SalesTable({ data, sorting, onSortingChange, onRowClick,
       },
       {
         id: 'bookingDate',
-        accessorKey: 'importedAt',
+        accessorKey: 'bookingDate',
         header: 'Buchung',
         cell: (info) => formatDate(info.getValue() as Date),
         size: 85,
