@@ -51,6 +51,7 @@ export interface EinzelcontrollingSnapshot {
 export interface ECUebersicht {
   auftragsvolumen: number;
   gesamtkosten: number;
+  hkIst: number; // Herstellkosten IST (B51)
   deckungsbeitrag: number;
   deckungsbeitragProzent: number;
   projektstatus: string;

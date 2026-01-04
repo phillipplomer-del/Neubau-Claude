@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Upload, TrendingUp, TrendingDown, FileSpreadsheet, Trash2, Calendar, ChevronRight, Sparkles } from 'lucide-react';
 import { useEinzelcontrolling } from '@/hooks/useEinzelcontrolling';
 import { useEinzelcontrollingImport } from '@/hooks/useEinzelcontrollingImport';
@@ -22,7 +22,60 @@ import {
   Legend,
 } from 'recharts';
 
+// Light mode colors (Aqua)
+const COLORS_LIGHT = {
+  umsatz: '#00E097',       // mint (primary)
+  vorkalkulation: '#00DEE0', // cyan
+  hkIst: '#00B8D4',        // teal
+  gesamtIst: '#0050E0',    // blue
+};
+
+// Dark mode colors (Orange → Gold → Green)
+const COLORS_DARK = {
+  umsatz: '#FFAA80',       // orange
+  vorkalkulation: '#FFD080', // light gold
+  hkIst: '#E0BD00',        // gold
+  gesamtIst: '#9EE000',    // lime
+};
+
+// Hook to detect dark mode
+function useDarkMode() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+
+    checkDarkMode();
+
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return isDark;
+}
+
+// Format currency value for display
+function formatCurrencyShort(value: number): string {
+  if (Math.abs(value) >= 1000000) {
+    return `${(value / 1000000).toFixed(2)} Mio €`;
+  }
+  if (Math.abs(value) >= 1000) {
+    return `${(value / 1000).toFixed(0)} T€`;
+  }
+  return `${value.toFixed(0)} €`;
+}
+
 export default function EinzelcontrollingView() {
+  const isDark = useDarkMode();
+  const CHART_COLORS = isDark ? COLORS_DARK : COLORS_LIGHT;
+
   const { user } = useUserContext();
   const {
     projects,
@@ -43,21 +96,30 @@ export default function EinzelcontrollingView() {
   // AI Report hooks
   const { prepareReportRequest } = useProjectReportData(selectedProject?.projektnummer || null);
   const { report, loading: reportLoading, error: reportError, generateReport, clearReport } = useProjectReport();
+  const [currentRequestData, setCurrentRequestData] = useState<ReturnType<typeof prepareReportRequest> | null>(null);
 
-  const handleGenerateReport = async () => {
+  // Open report panel with preview
+  const handleOpenReportPanel = () => {
     if (!selectedProject || !selectedSnapshot) return;
 
-    setShowReportPanel(true);
     const request = prepareReportRequest(
       selectedSnapshot,
       selectedProject.projektname || selectedProject.projektnummer,
       selectedProject.kundenname || 'Unbekannt'
     );
-    await generateReport(request);
+    setCurrentRequestData(request);
+    setShowReportPanel(true);
+  };
+
+  // Actually generate the report
+  const handleGenerateReport = async () => {
+    if (!currentRequestData) return;
+    await generateReport(currentRequestData);
   };
 
   const handleCloseReport = () => {
     setShowReportPanel(false);
+    setCurrentRequestData(null);
     clearReport();
   };
 
@@ -242,7 +304,7 @@ export default function EinzelcontrollingView() {
                   {snapshots.length} Snapshot{snapshots.length !== 1 ? 's' : ''} vorhanden
                 </span>
                 <button
-                  onClick={handleGenerateReport}
+                  onClick={handleOpenReportPanel}
                   disabled={!selectedSnapshot}
                   className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
                 >
@@ -307,36 +369,125 @@ export default function EinzelcontrollingView() {
                         </Pie>
                         <Tooltip
                           formatter={(value: number) => formatCurrency(value)}
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: 'var(--radius)',
+                            color: 'hsl(var(--foreground))',
+                          }}
+                          labelStyle={{ color: 'hsl(var(--foreground))' }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                {/* Plan vs Ist Bar Chart */}
+                {/* Projektübersicht Bar Chart */}
                 <div className="bg-card border border-border rounded-[var(--radius)] p-4">
-                  <h3 className="font-semibold mb-4">Plan vs. Ist</h3>
-                  <div className="h-64">
+                  <h3 className="font-semibold mb-4 text-center" style={{ fontFamily: 'var(--font-display)' }}>
+                    {selectedProject?.projektnummer}
+                  </h3>
+                  <div className="h-52">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={[
-                          {
-                            name: 'Kosten',
-                            Plan: selectedSnapshot.kpis?.planKosten ?? 0,
-                            Ist: selectedSnapshot.kpis?.istKosten ?? 0,
-                          },
+                          { name: 'Umsatz', value: selectedSnapshot.uebersicht?.auftragsvolumen ?? 0, key: 'umsatz' },
+                          { name: 'Vorkalkulation', value: selectedSnapshot.vorkalkulation?.gesamt ?? 0, key: 'vorkalkulation' },
+                          { name: 'HK IST', value: selectedSnapshot.uebersicht?.hkIst ?? 0, key: 'hkIst' },
+                          { name: 'Gesamt IST', value: selectedSnapshot.uebersicht?.gesamtkosten ?? 0, key: 'gesamtIst' },
                         ]}
-                        layout="vertical"
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                        <YAxis type="category" dataKey="name" />
-                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                        <Legend />
-                        <Bar dataKey="Plan" fill="#E0BD00" />
-                        <Bar dataKey="Ist" fill="#FFAA80" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                          tickLine={false}
+                          axisLine={{ stroke: 'hsl(var(--border))' }}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(value) => {
+                            if (Math.abs(value) >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                            if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(0)}k`;
+                            return value;
+                          }}
+                        />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (!active || !payload || payload.length === 0) return null;
+                            const data = payload[0];
+                            return (
+                              <div className="bg-card border border-border rounded-[12px] shadow-[var(--shadow-card)] p-3">
+                                <p className="font-semibold text-foreground" style={{ fontFamily: 'var(--font-display)' }}>
+                                  {data.payload.name}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {formatCurrencyShort(data.value as number)}
+                                </p>
+                              </div>
+                            );
+                          }}
+                          cursor={false}
+                        />
+                        <Bar
+                          dataKey="value"
+                          radius={[8, 8, 0, 0]}
+                          onMouseEnter={(_, index) => {
+                            const bars = document.querySelectorAll('.recharts-bar-rectangle');
+                            bars.forEach((bar, i) => {
+                              if (i === index) {
+                                (bar as HTMLElement).style.filter = 'brightness(1.15)';
+                                (bar as HTMLElement).style.transform = 'scaleY(1.02)';
+                                (bar as HTMLElement).style.transformOrigin = 'bottom';
+                              }
+                            });
+                          }}
+                          onMouseLeave={() => {
+                            const bars = document.querySelectorAll('.recharts-bar-rectangle');
+                            bars.forEach((bar) => {
+                              (bar as HTMLElement).style.filter = '';
+                              (bar as HTMLElement).style.transform = '';
+                            });
+                          }}
+                        >
+                          {[
+                            { key: 'umsatz' },
+                            { key: 'vorkalkulation' },
+                            { key: 'hkIst' },
+                            { key: 'gesamtIst' },
+                          ].map((entry) => (
+                            <Cell
+                              key={entry.key}
+                              fill={CHART_COLORS[entry.key as keyof typeof CHART_COLORS]}
+                              fillOpacity={0.85}
+                              style={{ transition: 'all 200ms ease' }}
+                            />
+                          ))}
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
+                  </div>
+                  {/* Summary below chart */}
+                  <div className="mt-3 pt-3 border-t border-border grid grid-cols-4 gap-2 text-center">
+                    {[
+                      { name: 'Umsatz', value: selectedSnapshot.uebersicht?.auftragsvolumen ?? 0, key: 'umsatz' },
+                      { name: 'Vorkalkulation', value: selectedSnapshot.vorkalkulation?.gesamt ?? 0, key: 'vorkalkulation' },
+                      { name: 'HK IST', value: selectedSnapshot.uebersicht?.hkIst ?? 0, key: 'hkIst' },
+                      { name: 'Gesamt IST', value: selectedSnapshot.uebersicht?.gesamtkosten ?? 0, key: 'gesamtIst' },
+                    ].map((item) => (
+                      <div key={item.key}>
+                        <div
+                          className="text-sm font-bold"
+                          style={{ color: CHART_COLORS[item.key as keyof typeof CHART_COLORS], fontFamily: 'var(--font-display)' }}
+                        >
+                          {formatCurrencyShort(item.value)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{item.name}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -422,6 +573,8 @@ export default function EinzelcontrollingView() {
           loading={reportLoading}
           error={reportError}
           onClose={handleCloseReport}
+          onGenerate={handleGenerateReport}
+          requestData={currentRequestData}
           projektInfo={
             selectedProject && selectedSnapshot
               ? {

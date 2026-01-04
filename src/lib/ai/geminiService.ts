@@ -53,6 +53,12 @@ export interface ProjectReportRequest {
       beschreibung: string;
       abweichungProzent: number;
     }>;
+    verspaetetePAs: Array<{
+      paNummer: string;
+      beschreibung: string;
+      endDatum: string;
+      tageVerspaetet: number;
+    }>;
   };
 }
 
@@ -89,7 +95,8 @@ Wichtige Schwellenwerte für die Bewertung:
 - Kostenabweichung > 5%: erhöht
 - Deckungsbeitrag < 15%: niedrig
 - Deckungsbeitrag < 25%: akzeptabel
-- Fortschritt deutlich hinter Plan: Risiko`;
+- Fortschritt deutlich hinter Plan: Risiko
+- Verspätete PAs: WICHTIG - jede verspätete PA ist ein Terminrisiko und sollte in den Risiken und Handlungsempfehlungen adressiert werden`;
 
 /**
  * Transform Einzelcontrolling snapshot to report request format
@@ -192,7 +199,7 @@ PRODUKTIONSSTRUKTUR:
 - Stunden Ist: ${request.produktionsstruktur.stundenIst.toFixed(0)} h
 - Abweichung: ${request.produktionsstruktur.abweichungStunden.toFixed(0)} h
 
-KRITISCHE PAs (hohe Abweichung):
+KRITISCHE PAs (hohe Stundenabweichung):
 ${
   request.produktionsstruktur.kritischePAs.length > 0
     ? request.produktionsstruktur.kritischePAs
@@ -200,6 +207,16 @@ ${
         .map((pa) => `- ${pa.paNummer}: ${pa.beschreibung} (${pa.abweichungProzent.toFixed(0)}% Abweichung)`)
         .join('\n')
     : '- Keine kritischen PAs identifiziert'
+}
+
+VERSPÄTETE PAs (Enddatum überschritten):
+${
+  request.produktionsstruktur.verspaetetePAs.length > 0
+    ? request.produktionsstruktur.verspaetetePAs
+        .slice(0, 5)
+        .map((pa) => `- ${pa.paNummer}: ${pa.beschreibung} (${pa.tageVerspaetet} Tage verspätet, Fällig: ${pa.endDatum})`)
+        .join('\n')
+    : '- Keine verspäteten PAs'
 }`
     : ''
 }

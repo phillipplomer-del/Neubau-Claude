@@ -133,22 +133,53 @@ export function useEinzelcontrollingImport(): UseEinzelcontrollingImportReturn {
 
       setProgress(40);
 
-      // Read Arbeitsgänge data (K5:N27 in Info sheet)
+      // Read Arbeitsgänge data (K:N in Info sheet, dynamic range)
+      // Start from row 2, continue until empty or SUMME row
       const arbeitsgaenge: { gruppe: string; soll: number; ist: number }[] = [];
-      for (let row = 5; row <= 27; row++) {
+      let stundenSoll = 0;
+      let stundenIst = 0;
+      let summeRowFound = false;
+
+      for (let row = 2; row <= 500; row++) {
         const gruppe = getStringCell(infoSheet, `K${row}`);
+
+        // Skip header row
+        if (gruppe === 'Arbeitsganggruppe') continue;
+
+        // Found SUMME row - extract totals and stop
+        if (gruppe === 'SUMME' || gruppe === 'Summe' || gruppe === 'Gesamt') {
+          stundenSoll = getNumericCell(infoSheet, `M${row}`);
+          stundenIst = getNumericCell(infoSheet, `N${row}`);
+          summeRowFound = true;
+          console.log(`SUMME gefunden in Zeile ${row}: Soll=${stundenSoll}, Ist=${stundenIst}`);
+          break;
+        }
+
+        // Empty row - stop if we've already found data
+        if (!gruppe && arbeitsgaenge.length > 0) {
+          // Check if next few rows are also empty (end of data)
+          const nextGruppe = getStringCell(infoSheet, `K${row + 1}`);
+          if (!nextGruppe || nextGruppe === 'SUMME' || nextGruppe === 'Summe') {
+            break;
+          }
+          continue; // Skip this empty row but continue looking
+        }
+
+        if (!gruppe) continue; // Skip empty rows at the beginning
+
         const soll = getNumericCell(infoSheet, `M${row}`);
         const ist = getNumericCell(infoSheet, `N${row}`);
-        if (gruppe && gruppe !== 'Arbeitsganggruppe' && gruppe !== 'SUMME') {
-          arbeitsgaenge.push({ gruppe, soll, ist });
-        }
+        arbeitsgaenge.push({ gruppe, soll, ist });
       }
 
-      console.log('Arbeitsgänge:', arbeitsgaenge);
+      // If no SUMME row found, calculate totals from arbeitsgaenge
+      if (!summeRowFound && arbeitsgaenge.length > 0) {
+        stundenSoll = arbeitsgaenge.reduce((sum, ag) => sum + ag.soll, 0);
+        stundenIst = arbeitsgaenge.reduce((sum, ag) => sum + ag.ist, 0);
+        console.log(`Keine SUMME-Zeile gefunden, berechnet: Soll=${stundenSoll}, Ist=${stundenIst}`);
+      }
 
-      // Get totals from row 27
-      const stundenSoll = getNumericCell(infoSheet, 'M27');
-      const stundenIst = getNumericCell(infoSheet, 'N27');
+      console.log(`Arbeitsgänge: ${arbeitsgaenge.length} Einträge gefunden`);
 
       setProgress(50);
 
@@ -197,6 +228,7 @@ export function useEinzelcontrollingImport(): UseEinzelcontrollingImportReturn {
         const uebersicht: ECUebersicht = {
           auftragsvolumen: umsatz,
           gesamtkosten: gesamtIst,
+          hkIst, // Herstellkosten IST (row 51)
           deckungsbeitrag,
           deckungsbeitragProzent,
           projektstatus: 'In Bearbeitung',
