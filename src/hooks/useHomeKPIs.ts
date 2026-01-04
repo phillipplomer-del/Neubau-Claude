@@ -1,11 +1,14 @@
 /**
  * Hook for Home page KPIs
- * Aggregates data from Sales and Controlling
+ * Aggregates data from Sales (IndexedDB), Controlling (IndexedDB) and Firebase
  */
 
 import { useState, useEffect } from 'react';
 import { salesRepository } from '@/lib/db/repositories/salesRepository';
 import { projectRepository } from '@/lib/db/repositories/projectRepository';
+import { getAllWatchedProjects } from '@/lib/firebase/projectWatchRepository';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 import type { SalesEntry } from '@/types/sales';
 import type { ProjectManagementEntry } from '@/types/projectManagement';
 
@@ -31,35 +34,42 @@ export function useHomeKPIs(): HomeKPIs {
   useEffect(() => {
     const loadKPIs = async () => {
       try {
-        // Load sales data
+        // Load sales data from IndexedDB
         const salesEntries = await salesRepository.getAll() as SalesEntry[];
 
         // Calculate offener Umsatz (sum of openTurnover or remainingTurnover)
         let offenerUmsatz = 0;
-        let kritischeAuftraege = 0;
-        let beobachteteAuftraege = 0;
-
         salesEntries.forEach((entry) => {
-          // Sum open turnover
           offenerUmsatz += entry.openTurnover || entry.remainingTurnover || 0;
-
-          // Count by comment status
-          if (entry.commentStatus === 'critical') {
-            kritischeAuftraege++;
-          } else if (entry.commentStatus === 'watched') {
-            beobachteteAuftraege++;
-          }
         });
 
-        // Load project data
+        // Load project data from IndexedDB
         const projectEntries = await projectRepository.getAll() as ProjectManagementEntry[];
         const anzahlProjekte = projectEntries.filter(p => p.projektnummer).length;
+
+        // Load watched projects from Firebase
+        const watchedProjects = await getAllWatchedProjects();
+        const beobachteteProjekte = watchedProjects.length;
+
+        // Load critical entries from Firebase salesComments
+        let kritischeProjekte = 0;
+        try {
+          const commentsSnapshot = await getDocs(collection(db, 'salesComments'));
+          commentsSnapshot.forEach((doc) => {
+            const data = doc.data();
+            if (data.commentStatus === 'critical') {
+              kritischeProjekte++;
+            }
+          });
+        } catch (firebaseErr) {
+          console.warn('Could not load salesComments from Firebase:', firebaseErr);
+        }
 
         setKpis({
           offenerUmsatz,
           anzahlProjekte,
-          kritischeProjekte: kritischeAuftraege,
-          beobachteteProjekte: beobachteteAuftraege,
+          kritischeProjekte,
+          beobachteteProjekte,
           loading: false,
           error: null,
         });
