@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { useUserContext } from '@/contexts/UserContext';
-import { Menu, ChevronLeft, Home, Upload, Sun, Moon, User, LogOut, Clock } from 'lucide-react';
+import TimerWidget from '@/pages/timeTracking/TimerWidget';
+import { Menu, ChevronLeft, Home, Upload, Sun, Moon, User, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   sidebarCollapsed: boolean;
@@ -14,29 +15,6 @@ export default function Header({ sidebarCollapsed, onSidebarToggle }: HeaderProp
   const { user, logout } = useUserContext();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatDateTime = (date: Date) => {
-    const dateStr = date.toLocaleDateString('de-DE', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-    });
-    const timeStr = date.toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    return { dateStr, timeStr };
-  };
-
-  const { dateStr, timeStr } = formatDateTime(currentTime);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/50 bg-card shadow-[var(--shadow-chip)]">
@@ -79,14 +57,8 @@ export default function Header({ sidebarCollapsed, onSidebarToggle }: HeaderProp
             <span>Home</span>
           </Link>
 
-          {/* Date & Time */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-chip)] bg-card-muted">
-            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-sm font-medium" style={{ fontFamily: 'var(--font-display)' }}>
-              {timeStr}
-            </span>
-            <span className="text-xs text-muted-foreground">{dateStr}</span>
-          </div>
+          {/* Timer Widget */}
+          <TimerWidget />
 
           <Link
             to="/import"
