@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { Upload, TrendingUp, TrendingDown, FileSpreadsheet, Trash2, Calendar, ChevronRight } from 'lucide-react';
+import { Upload, TrendingUp, TrendingDown, FileSpreadsheet, Trash2, Calendar, ChevronRight, Sparkles } from 'lucide-react';
 import { useEinzelcontrolling } from '@/hooks/useEinzelcontrolling';
 import { useEinzelcontrollingImport } from '@/hooks/useEinzelcontrollingImport';
+import { useProjectReportData } from '@/hooks/useProjectReportData';
+import { useProjectReport } from '@/hooks/useProjectReport';
 import { useUserContext } from '@/contexts/UserContext';
 import type { EinzelcontrollingProject, EinzelcontrollingSnapshot } from '@/types/einzelcontrolling';
 import { BEREICH_COLORS } from '@/types/einzelcontrolling';
+import ProjectReportPanel from './components/ProjectReportPanel';
 import {
   PieChart,
   Pie,
@@ -35,6 +38,28 @@ export default function EinzelcontrollingView() {
   const { importing, progress, error: importError, importFile, reset } = useEinzelcontrollingImport();
   const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [showReportPanel, setShowReportPanel] = useState(false);
+
+  // AI Report hooks
+  const { prepareReportRequest } = useProjectReportData(selectedProject?.projektnummer || null);
+  const { report, loading: reportLoading, error: reportError, generateReport, clearReport } = useProjectReport();
+
+  const handleGenerateReport = async () => {
+    if (!selectedProject || !selectedSnapshot) return;
+
+    setShowReportPanel(true);
+    const request = prepareReportRequest(
+      selectedSnapshot,
+      selectedProject.projektname || selectedProject.projektnummer,
+      selectedProject.kundenname || 'Unbekannt'
+    );
+    await generateReport(request);
+  };
+
+  const handleCloseReport = () => {
+    setShowReportPanel(false);
+    clearReport();
+  };
 
   const selectedSnapshot = snapshots.find((s) => s.id === selectedSnapshotId) || snapshots[0];
 
@@ -216,6 +241,14 @@ export default function EinzelcontrollingView() {
                 <span className="text-sm text-muted-foreground">
                   {snapshots.length} Snapshot{snapshots.length !== 1 ? 's' : ''} vorhanden
                 </span>
+                <button
+                  onClick={handleGenerateReport}
+                  disabled={!selectedSnapshot}
+                  className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span className="text-sm font-medium">KI-Bericht</span>
+                </button>
               </div>
 
               {/* KPI Cards */}
@@ -380,6 +413,25 @@ export default function EinzelcontrollingView() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* AI Report Panel */}
+      {showReportPanel && (
+        <ProjectReportPanel
+          report={report}
+          loading={reportLoading}
+          error={reportError}
+          onClose={handleCloseReport}
+          projektInfo={
+            selectedProject && selectedSnapshot
+              ? {
+                  projektnummer: selectedProject.projektnummer,
+                  projektname: selectedProject.projektname || selectedProject.projektnummer,
+                  kalenderwoche: selectedSnapshot.kalenderwoche,
+                }
+              : undefined
+          }
+        />
       )}
     </div>
   );
