@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { useUserContext } from '@/contexts/UserContext';
 import TimerWidget from '@/pages/timeTracking/TimerWidget';
-import { Menu, ChevronLeft, Home, Upload, Sun, Moon, User, LogOut } from 'lucide-react';
+import { Menu, ChevronLeft, Home, Upload, Sun, Moon, User, LogOut, Clock } from 'lucide-react';
 
 interface HeaderProps {
   sidebarCollapsed: boolean;
@@ -15,6 +15,15 @@ export default function Header({ sidebarCollapsed, onSidebarToggle }: HeaderProp
   const { user, logout } = useUserContext();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const timeStr = currentTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = currentTime.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/50 bg-card shadow-[var(--shadow-chip)]">
@@ -56,6 +65,15 @@ export default function Header({ sidebarCollapsed, onSidebarToggle }: HeaderProp
             <Home className="h-4 w-4" />
             <span>Home</span>
           </Link>
+
+          {/* Clock */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-chip)] bg-card-muted">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-sm font-medium" style={{ fontFamily: 'var(--font-display)' }}>
+              {timeStr}
+            </span>
+            <span className="text-xs text-muted-foreground">{dateStr}</span>
+          </div>
 
           {/* Timer Widget */}
           <TimerWidget />
