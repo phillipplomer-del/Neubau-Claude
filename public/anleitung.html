@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PVCS Prism - Benutzeranleitung</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary: #06b6d4;
+      --accent: #f59e0b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 16px;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      padding: 80px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .hero .subtitle {
+      font-size: 1.25rem;
+      opacity: 0.9;
+      margin-bottom: 32px;
+    }
+
+    .hero .version {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      padding: 8px 20px;
+      border-radius: 100px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 20px;
+    }
+
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 32px;
+      background: linear-gradient(180deg, var(--primary), var(--secondary));
+      border-radius: 2px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .card h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card h3 .icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .card li {
+      padding: 8px 0;
+      padding-left: 28px;
+      position: relative;
+      color: var(--text-muted);
+    }
+
+    .card li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 24px;
+    }
+
+    .module-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .module-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .module-header {
+      padding: 24px;
+      color: white;
+    }
+
+    .module-header.sales { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    .module-header.production { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+    .module-header.projects { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .module-header.time { background: linear-gradient(135deg, #10b981, #059669); }
+    .module-header.data { background: linear-gradient(135deg, #ec4899, #db2777); }
+
+    .module-header h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+    }
+
+    .module-header p {
+      opacity: 0.9;
+      font-size: 0.875rem;
+    }
+
+    .module-content {
+      padding: 24px;
+    }
+
+    .module-content h4 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .feature-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .feature-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9375rem;
+    }
+
+    .feature-list li:last-child {
+      border-bottom: none;
+    }
+
+    .feature-list .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .feature-list .dot.primary { background: var(--primary); }
+    .feature-list .dot.secondary { background: var(--secondary); }
+    .feature-list .dot.accent { background: var(--accent); }
+    .feature-list .dot.success { background: var(--success); }
+    .feature-list .dot.danger { background: var(--danger); }
+
+    .steps {
+      counter-reset: step;
+    }
+
+    .step {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 32px;
+      align-items: flex-start;
+    }
+
+    .step-number {
+      counter-increment: step;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .step-number::before {
+      content: counter(step);
+    }
+
+    .step-content h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.125rem;
+      margin-bottom: 8px;
+    }
+
+    .step-content p {
+      color: var(--text-muted);
+    }
+
+    .tip-box {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1));
+      border-left: 4px solid var(--primary);
+      padding: 20px 24px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin: 24px 0;
+    }
+
+    .tip-box h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      color: var(--primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tip-box p {
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .keyboard-shortcut {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin: 8px 0;
+    }
+
+    .key {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.8125rem;
+      box-shadow: 0 2px 0 var(--border);
+    }
+
+    .toc {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      position: sticky;
+      top: 20px;
+    }
+
+    .toc h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      margin-bottom: 16px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .toc ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .toc li {
+      margin-bottom: 8px;
+    }
+
+    .toc a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.9375rem;
+      display: block;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .toc a:hover {
+      background: var(--bg);
+      color: var(--primary);
+    }
+
+    .two-column {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .two-column {
+        grid-template-columns: 1fr;
+      }
+      .toc {
+        position: static;
+      }
+      .hero h1 {
+        font-size: 2.5rem;
+      }
+      .modules-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    footer {
+      background: var(--text);
+      color: white;
+      padding: 40px 20px;
+      text-align: center;
+      margin-top: 60px;
+    }
+
+    footer p {
+      opacity: 0.7;
+      font-size: 0.875rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .badge.new { background: var(--success); color: white; }
+    .badge.beta { background: var(--accent); color: white; }
+    .badge.pro { background: var(--primary); color: white; }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-content">
+      <h1>PVCS Prism</h1>
+      <p class="subtitle">Business Intelligence Dashboard<br>für Sales, Produktion und Projektmanagement</p>
+      <span class="version">Version 2.0 - Januar 2025</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="two-column">
+      <aside>
+        <nav class="toc">
+          <h3>Inhalt</h3>
+          <ul>
+            <li><a href="#einfuehrung">Einführung</a></li>
+            <li><a href="#erste-schritte">Erste Schritte</a></li>
+            <li><a href="#module">Module</a></li>
+            <li><a href="#sales">Sales</a></li>
+            <li><a href="#produktion">Produktion</a></li>
+            <li><a href="#projektmanagement">Projektmanagement</a></li>
+            <li><a href="#zeiterfassung">Zeiterfassung</a></li>
+            <li><a href="#einzelcontrolling">Einzelcontrolling</a></li>
+            <li><a href="#ki-bericht">KI-Projektbericht</a></li>
+            <li><a href="#datenimport">Datenimport</a></li>
+            <li><a href="#tipps">Tipps & Tricks</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main>
+        <section id="einfuehrung">
+          <h2 class="section-title">Einführung</h2>
+          <div class="card">
+            <p>
+              <strong>PVCS Prism</strong> ist ein modernes Business Intelligence Dashboard, das speziell für die Anforderungen
+              von Maschinenbau- und Fertigungsunternehmen entwickelt wurde. Die Anwendung vereint Sales-Tracking,
+              Produktionsplanung und Projektcontrolling in einer einheitlichen, benutzerfreundlichen Oberfläche.
+            </p>
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Hauptfunktionen</h4>
+            <ul>
+              <li>Echtzeit-Übersicht über Lieferungen und Verkaufszahlen</li>
+              <li>Produktionsplanung mit Gantt-Diagrammen</li>
+              <li>Projektcontrolling mit Soll-Ist-Vergleichen</li>
+              <li>Zeiterfassung pro Projekt</li>
+              <li>KI-gestützte Projektberichte</li>
+              <li>Excel-Import für Controlling-Daten</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="erste-schritte">
+          <h2 class="section-title">Erste Schritte</h2>
+          <div class="card">
+            <div class="steps">
+              <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">
+                  <h4>Anmeldung</h4>
+                  <p>Öffnen Sie die Anwendung und geben Sie Ihren Namen ein. Die Anmeldung wird lokal gespeichert.</p>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">
+                  <h4>Daten importieren</h4>
+                  <p>Navigieren Sie zum Import-Bereich und laden Sie Ihre Excel-Dateien hoch (Sales, Produktion, Controlling).</p>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">
+                  <h4>Dashboard erkunden</h4>
+                  <p>Nutzen Sie die Sidebar zur Navigation zwischen den verschiedenen Modulen.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="tip-box">
+              <h4>💡 Tipp</h4>
+              <p>Die Sidebar lässt sich mit dem Hamburger-Menü einklappen, um mehr Platz für die Inhalte zu schaffen.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="module">
+          <h2 class="section-title">Module im Überblick</h2>
+          <div class="modules-grid">
+            <div class="module-card">
+              <div class="module-header sales">
+                <h3>📦 Sales</h3>
+                <p>Lieferungen & Umsätze</p>
+              </div>
+              <div class="module-content">
+                <h4>Funktionen</h4>
+                <ul class="feature-list">
+                  <li><span class="dot primary"></span>Dashboard mit KPIs</li>
+                  <li><span class="dot primary"></span>Lieferungsliste mit Filterung</li>
+                  <li><span class="dot primary"></span>Kritische & beobachtete Projekte</li>
+                  <li><span class="dot primary"></span>Detailansicht pro Lieferung</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="module-card">
+              <div class="module-header production">
+                <h3>🏭 Produktion</h3>
+                <p>Planung & Fertigung</p>
+              </div>
+              <div class="module-content">
+                <h4>Funktionen</h4>
+                <ul class="feature-list">
+                  <li><span class="dot secondary"></span>Produktions-Dashboard</li>
+                  <li><span class="dot secondary"></span>Gantt-Diagramm</li>
+                  <li><span class="dot secondary"></span>Planungsübersicht</li>
+                  <li><span class="dot secondary"></span>Soll-Ist-Vergleich</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="module-card">
+              <div class="module-header projects">
+                <h3>📁 Projektmanagement</h3>
+                <p>Controlling & Planner</p>
+              </div>
+              <div class="module-content">
+                <h4>Funktionen</h4>
+                <ul class="feature-list">
+                  <li><span class="dot accent"></span>Controlling-Dashboard</li>
+                  <li><span class="dot accent"></span>Projektliste</li>
+                  <li><span class="dot accent"></span>Kanban-Planner</li>
+                  <li><span class="dot accent"></span>Einzelcontrolling</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="module-card">
+              <div class="module-header time">
+                <h3>⏱️ Zeiterfassung</h3>
+                <p>Timer & Auswertung</p>
+              </div>
+              <div class="module-content">
+                <h4>Funktionen</h4>
+                <ul class="feature-list">
+                  <li><span class="dot success"></span>Timer starten/stoppen</li>
+                  <li><span class="dot success"></span>Manuelle Einträge</li>
+                  <li><span class="dot success"></span>Wochen-Übersicht</li>
+                  <li><span class="dot success"></span>PDF-Export</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="sales">
+          <h2 class="section-title">Sales-Modul</h2>
+          <div class="card">
+            <h3><span class="icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">📦</span> Lieferungen verwalten</h3>
+            <p>
+              Das Sales-Modul bietet eine umfassende Übersicht über alle Lieferungen. Auf dem Dashboard sehen Sie die wichtigsten
+              KPIs auf einen Blick: Offener Umsatz, Anzahl Projekte und kritische Lieferungen.
+            </p>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Projekt-Status</h4>
+            <ul>
+              <li><strong>Beobachtet:</strong> Projekte, die besondere Aufmerksamkeit erfordern</li>
+              <li><strong>Kritisch:</strong> Projekte mit erhöhtem Risiko</li>
+              <li><strong>Normal:</strong> Projekte ohne besondere Auffälligkeiten</li>
+            </ul>
+
+            <div class="tip-box">
+              <h4>💡 Status ändern</h4>
+              <p>Klicken Sie auf das Auge-Symbol (👁) um ein Projekt zu beobachten, oder auf das Warnsymbol (⚠️) um es als kritisch zu markieren.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="produktion">
+          <h2 class="section-title">Produktion</h2>
+          <div class="card">
+            <h3><span class="icon" style="background: linear-gradient(135deg, #06b6d4, #0891b2); color: white;">🏭</span> Produktionsplanung</h3>
+            <p>
+              Behalten Sie Ihre Fertigung im Blick mit interaktiven Gantt-Diagrammen und der Soll-Ist-Analyse.
+            </p>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Gantt-Ansicht</h4>
+            <p>
+              Die Gantt-Ansicht zeigt alle Produktionsaufträge (PAs) auf einer Zeitachse. Verspätete PAs werden rot markiert.
+              Nutzen Sie die Zoom-Funktion um zwischen Tages-, Wochen- und Monatsansicht zu wechseln.
+            </p>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Soll-Ist-Vergleich</h4>
+            <p>
+              Vergleichen Sie geplante und tatsächliche Produktionsstunden. Abweichungen werden farblich hervorgehoben.
+            </p>
+          </div>
+        </section>
+
+        <section id="projektmanagement">
+          <h2 class="section-title">Projektmanagement</h2>
+          <div class="card">
+            <h3><span class="icon" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">📁</span> Projekte steuern</h3>
+            <p>
+              Das Projektmanagement-Modul vereint Controlling-Dashboard, Projektliste und Kanban-Planner.
+            </p>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Controlling-Dashboard</h4>
+            <p>
+              Sehen Sie alle Projekte mit Deckungsbeitrag, Fortschritt und Kostenabweichung.
+              Projekte mit negativem DB oder hoher Kostenüberschreitung werden hervorgehoben.
+            </p>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Kanban-Planner</h4>
+            <p>
+              Organisieren Sie Aufgaben visuell mit Drag-and-Drop. Erstellen Sie eigene Boards für verschiedene Projekte oder Teams.
+            </p>
+          </div>
+        </section>
+
+        <section id="zeiterfassung">
+          <h2 class="section-title">Zeiterfassung</h2>
+          <div class="card">
+            <h3><span class="icon" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">⏱️</span> Zeit erfassen <span class="badge new">Neu</span></h3>
+            <p>
+              Erfassen Sie Ihre Arbeitszeit projektbezogen - direkt aus dem Header oder auf der Zeiterfassungs-Seite.
+            </p>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Timer starten</h4>
+            <ol style="padding-left: 20px; color: var(--text-muted);">
+              <li style="margin-bottom: 8px;">Klicken Sie auf "Zeit erfassen" im Header</li>
+              <li style="margin-bottom: 8px;">Wählen Sie ein Projekt aus oder geben Sie eine Projektnummer ein</li>
+              <li style="margin-bottom: 8px;">Der Timer startet automatisch</li>
+              <li style="margin-bottom: 8px;">Stoppen Sie den Timer und fügen Sie optional eine Beschreibung hinzu</li>
+            </ol>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Kategorien</h4>
+            <ul>
+              <li><strong>Entwicklung:</strong> Konstruktion, Programmierung</li>
+              <li><strong>Besprechung:</strong> Meetings, Abstimmungen</li>
+              <li><strong>Planung:</strong> Projektplanung, Konzeption</li>
+              <li><strong>Verwaltung:</strong> Administration, Dokumentation</li>
+              <li><strong>Review:</strong> Prüfung, Qualitätssicherung</li>
+              <li><strong>Sonstiges:</strong> Andere Tätigkeiten</li>
+            </ul>
+
+            <div class="tip-box">
+              <h4>📄 PDF-Export</h4>
+              <p>Exportieren Sie Ihre Zeiteinträge als PDF für Abrechnungen oder Dokumentation.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="einzelcontrolling">
+          <h2 class="section-title">Einzelcontrolling</h2>
+          <div class="card">
+            <h3><span class="icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white;">📊</span> Projektdetails analysieren</h3>
+            <p>
+              Laden Sie eine Einzelcontrolling-Excel hoch und erhalten Sie eine detaillierte Analyse mit allen Kostenstellen,
+              Arbeitsgängen und dem KI-gestützten Projektbericht.
+            </p>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Excel-Aufbau</h4>
+            <p>Die Einzelcontrolling-Excel sollte folgende Sheets enthalten:</p>
+            <ul>
+              <li><strong>Info:</strong> Übersicht mit Projektnummer, Kunde, Auftragsvolumen</li>
+              <li><strong>Tabellen:</strong> Detaillierte Kostenaufstellung nach Bereichen</li>
+            </ul>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Auswertungen</h4>
+            <ul>
+              <li>Übersicht: Auftragsvolumen, Gesamtkosten, Deckungsbeitrag</li>
+              <li>KPIs: Plan vs. Ist, Kostenabweichung, Fortschritt</li>
+              <li>Balkendiagramm: Kosten nach Bereich</li>
+              <li>Produktions-Arbeitsgänge mit Status</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="ki-bericht">
+          <h2 class="section-title">KI-Projektbericht</h2>
+          <div class="card">
+            <h3><span class="icon" style="background: linear-gradient(135deg, #ec4899, #db2777); color: white;">🤖</span> KI-Analyse <span class="badge pro">Pro</span></h3>
+            <p>
+              Der KI-Projektbericht nutzt Google Gemini 3 Flash um automatisch eine professionelle Analyse
+              Ihrer Projektdaten zu erstellen.
+            </p>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Berichtsinhalte</h4>
+            <ul>
+              <li><strong>Zusammenfassung:</strong> Kompakte Übersicht des Projektstatus</li>
+              <li><strong>Stärken:</strong> Positive Aspekte des Projekts</li>
+              <li><strong>Risiken:</strong> Identifizierte Problemfelder</li>
+              <li><strong>Handlungsempfehlungen:</strong> Konkrete Maßnahmen</li>
+              <li><strong>Fazit:</strong> Gesamtbewertung</li>
+            </ul>
+
+            <div class="tip-box">
+              <h4>🔒 Datenschutz</h4>
+              <p>Die KI-Analyse erfolgt serverseitig über eine sichere Netlify Function. Ihre Daten werden nicht gespeichert.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="datenimport">
+          <h2 class="section-title">Datenimport</h2>
+          <div class="card">
+            <h3><span class="icon" style="background: linear-gradient(135deg, #64748b, #475569); color: white;">📥</span> Excel-Dateien importieren</h3>
+            <p>
+              PVCS Prism unterstützt den Import von Excel-Dateien (.xlsx) für verschiedene Bereiche.
+            </p>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Unterstützte Dateitypen</h4>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border);">
+                  <th style="text-align: left; padding: 12px 0; color: var(--text-muted); font-weight: 600;">Datei</th>
+                  <th style="text-align: left; padding: 12px 0; color: var(--text-muted); font-weight: 600;">Modul</th>
+                  <th style="text-align: left; padding: 12px 0; color: var(--text-muted); font-weight: 600;">Erkennung</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 12px 0;">Lieferungen.xlsx</td>
+                  <td style="padding: 12px 0;">Sales</td>
+                  <td style="padding: 12px 0;">Automatisch</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 12px 0;">Planung.xlsx</td>
+                  <td style="padding: 12px 0;">Produktion</td>
+                  <td style="padding: 12px 0;">Automatisch</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 12px 0;">Controlling.xlsx</td>
+                  <td style="padding: 12px 0;">Projektmanagement</td>
+                  <td style="padding: 12px 0;">Automatisch</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0;">Einzelcontrolling.xlsx</td>
+                  <td style="padding: 12px 0;">Einzelcontrolling</td>
+                  <td style="padding: 12px 0;">Manuell</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="tip-box">
+              <h4>⚡ Schnellimport</h4>
+              <p>Ziehen Sie Excel-Dateien per Drag & Drop auf den Import-Bereich. Die Datei wird automatisch erkannt.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="tipps">
+          <h2 class="section-title">Tipps & Tricks</h2>
+          <div class="card">
+            <h3>🎯 Produktiver arbeiten</h3>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Dark Mode</h4>
+            <p>
+              Wechseln Sie zwischen Hell- und Dunkelmodus mit dem Sonnen/Mond-Symbol im Header.
+              Die Einstellung wird gespeichert.
+            </p>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Sidebar einklappen</h4>
+            <p>
+              Klicken Sie auf das Menü-Symbol links oben um die Sidebar einzuklappen und mehr Platz zu gewinnen.
+            </p>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Schnelle Zeiterfassung</h4>
+            <p>
+              Nutzen Sie den Timer-Button im Header für schnellen Zugriff auf die Zeiterfassung von jeder Seite aus.
+            </p>
+
+            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Daten in Firebase</h4>
+            <p>
+              Kritische/beobachtete Projekte und Zeiteinträge werden in Firebase gespeichert und sind geräteübergreifend verfügbar.
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <footer>
+    <p><strong>PVCS Prism</strong> - Business Intelligence Dashboard</p>
+    <p style="margin-top: 8px;">© 2025 PVCS. Alle Rechte vorbehalten.</p>
+  </footer>
+</body>
+</html>
