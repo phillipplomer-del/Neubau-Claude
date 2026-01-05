@@ -1,9 +1,8 @@
 /**
  * Gemini AI Service for Project Reports
- * Uses Gemini 3 Flash Preview for generating project analysis
+ * Uses Netlify Function to call Gemini 3 Flash Preview (keeps API key server-side)
  */
 
-import { GoogleGenAI } from '@google/genai';
 import type { EinzelcontrollingSnapshot } from '@/types/einzelcontrolling';
 
 // Types for the AI report
@@ -71,33 +70,6 @@ export interface ProjectReport {
   generatedAt: string;
 }
 
-const SYSTEM_PROMPT = `Du bist ein erfahrener Projektcontroller in einem deutschen Maschinenbauunternehmen.
-Du analysierst Projektdaten und erstellst prägnante Berichte für das Management.
-
-Deine Aufgabe:
-- Analysiere die übergebenen Controlling-Daten objektiv
-- Identifiziere Stärken und Risiken des Projekts
-- Gib konkrete, umsetzbare Handlungsempfehlungen
-- Schreibe auf Deutsch in professionellem Ton
-- Halte dich kurz und prägnant
-
-Antworte IMMER im folgenden JSON-Format:
-{
-  "zusammenfassung": "2-3 Sätze Zusammenfassung des Projektstatus",
-  "staerken": ["Stärke 1", "Stärke 2", ...],
-  "risiken": ["Risiko 1", "Risiko 2", ...],
-  "handlungsempfehlungen": ["1. Empfehlung", "2. Empfehlung", ...],
-  "fazit": "Gesamtbewertung in 1-2 Sätzen"
-}
-
-Wichtige Schwellenwerte für die Bewertung:
-- Kostenabweichung > 10%: kritisch
-- Kostenabweichung > 5%: erhöht
-- Deckungsbeitrag < 15%: niedrig
-- Deckungsbeitrag < 25%: akzeptabel
-- Fortschritt deutlich hinter Plan: Risiko
-- Verspätete PAs: WICHTIG - jede verspätete PA ist ein Terminrisiko und sollte in den Risiken und Handlungsempfehlungen adressiert werden`;
-
 /**
  * Transform Einzelcontrolling snapshot to report request format
  */
@@ -143,22 +115,33 @@ export function transformSnapshotToRequest(
 }
 
 /**
- * Generate project report using Gemini 3 Flash
+ * Generate project report using Netlify Function (Gemini 3 Flash)
  */
 export async function generateProjectReport(
   request: ProjectReportRequest
 ): Promise<ProjectReport> {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const prompt = buildPrompt(request);
 
-  if (!apiKey) {
-    throw new Error(
-      'Gemini API Key nicht konfiguriert. Bitte VITE_GEMINI_API_KEY in .env setzen.'
-    );
+  // Call Netlify Function instead of direct API
+  const response = await fetch('/.netlify/functions/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Unbekannter Fehler' }));
+    throw new Error(error.error || `API-Fehler: ${response.status}`);
   }
 
-  const ai = new GoogleGenAI({ apiKey });
+  return response.json();
+}
 
-  const userPrompt = `Analysiere folgende Projektdaten und erstelle einen Bericht:
+/**
+ * Build the prompt for Gemini
+ */
+function buildPrompt(request: ProjectReportRequest): string {
+  return `Analysiere folgende Projektdaten und erstelle einen Bericht:
 
 PROJEKT: ${request.projektInfo.projektnummer} - ${request.projektInfo.projektname}
 KUNDE: ${request.projektInfo.kunde}
@@ -222,40 +205,6 @@ ${
 }
 
 Erstelle jetzt den Projektbericht im JSON-Format.`;
-
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: userPrompt,
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        thinkingConfig: { thinkingLevel: 'medium' },
-        responseMimeType: 'application/json',
-      },
-    });
-
-    const text = response.text;
-    if (!text) {
-      throw new Error('Keine Antwort von Gemini erhalten');
-    }
-
-    // Parse JSON response
-    const parsed = JSON.parse(text);
-
-    return {
-      zusammenfassung: parsed.zusammenfassung || '',
-      staerken: parsed.staerken || [],
-      risiken: parsed.risiken || [],
-      handlungsempfehlungen: parsed.handlungsempfehlungen || [],
-      fazit: parsed.fazit || '',
-      generatedAt: new Date().toISOString(),
-    };
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      throw new Error('Gemini-Antwort konnte nicht als JSON interpretiert werden');
-    }
-    throw error;
-  }
 }
 
 // Helper functions
