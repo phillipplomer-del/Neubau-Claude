@@ -9,14 +9,17 @@
  * 4. Connection lines are guaranteed not to cross
  */
 
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, lazy, Suspense } from 'react';
 import * as d3 from 'd3';
 import { useProductionHierarchy, type HierarchyNode } from '@/hooks/useProductionHierarchy';
 import { useSalesData } from '@/hooks/useSalesData';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';
-import { RefreshCw, AlertCircle, Maximize2, Minimize2, Shuffle, Expand, Shrink } from 'lucide-react';
+import { RefreshCw, AlertCircle, Maximize2, Minimize2, Shuffle, Expand, Shrink, Box, Circle } from 'lucide-react';
+
+// Lazy load 3D component
+const ForceTimelineView3D = lazy(() => import('./ForceTimelineView3D'));
 
 // Timeline node with position info
 interface TimelineNode {
@@ -253,6 +256,36 @@ function estimateTreeSize(node: HierarchyNode): { width: number; height: number;
 }
 
 export default function ForceTimelineView() {
+  // 2D/3D mode toggle - stored in localStorage
+  const [is3DMode, setIs3DMode] = useState(() => {
+    const stored = localStorage.getItem('forceTimeline-3dMode');
+    return stored === 'true';
+  });
+
+  // Update localStorage when mode changes
+  useEffect(() => {
+    localStorage.setItem('forceTimeline-3dMode', is3DMode.toString());
+  }, [is3DMode]);
+
+  // If 3D mode is active, render the 3D component
+  if (is3DMode) {
+    return (
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-96">
+          <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }>
+        <ForceTimelineView3D onSwitchTo2D={() => setIs3DMode(false)} />
+      </Suspense>
+    );
+  }
+
+  // 2D mode - original implementation
+  return <ForceTimelineView2D onSwitchTo3D={() => setIs3DMode(true)} />;
+}
+
+// The original 2D implementation
+function ForceTimelineView2D({ onSwitchTo3D }: { onSwitchTo3D?: () => void }) {
   const isDark = useDarkMode();
   const COLORS = isDark ? COLORS_DARK : COLORS_LIGHT;
 
@@ -1408,10 +1441,18 @@ export default function ForceTimelineView() {
             Verkaufsartikel nach Lieferdatum (Lane-basiertes Layout)
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={refresh}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Aktualisieren
-        </Button>
+        <div className="flex items-center gap-2">
+          {onSwitchTo3D && (
+            <Button variant="outline" size="sm" onClick={onSwitchTo3D}>
+              <Box className="h-4 w-4 mr-2" />
+              3D View
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={refresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Aktualisieren
+          </Button>
+        </div>
       </div>
 
       {/* Controls */}

@@ -4,23 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PVCS Prism - Benutzeranleitung</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --secondary: #06b6d4;
-      --accent: #f59e0b;
-      --success: #10b981;
-      --danger: #ef4444;
-      --bg: #f8fafc;
-      --bg-card: #ffffff;
-      --text: #1e293b;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --radius: 16px;
-      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      /* PVCS Prism Aqua Design - Light Mode */
+      --background: #F6F7FB;
+      --card: #FFFFFF;
+      --card-muted: #F2F3F7;
+      --foreground: #1A1D26;
+      --muted-foreground: #6B7083;
+      --border: #E4E6EE;
+
+      /* Accent Colors */
+      --accent-1: #00E097;
+      --accent-2: #00DEE0;
+      --accent-3: #0050E0;
+      --success: #00C853;
+      --warning: #FFB300;
+      --danger: #FF5252;
+
+      /* Design Tokens */
+      --radius-card: 20px;
+      --radius-chip: 14px;
+      --radius-button: 12px;
+
+      /* Shadows */
+      --shadow-chip: 0 2px 8px rgba(0, 80, 224, 0.06);
+      --shadow-card: 0 4px 20px rgba(0, 80, 224, 0.08);
+      --shadow-hover: 0 8px 32px rgba(0, 80, 224, 0.12);
+      --shadow-glow: 0 4px 24px rgba(0, 222, 224, 0.35);
+
+      /* Fonts */
+      --font-display: 'Outfit', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
     }
 
     * {
@@ -30,14 +46,15 @@
     }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      font-family: var(--font-body);
+      background: var(--background);
+      color: var(--foreground);
       line-height: 1.6;
     }
 
+    /* Hero Section */
     .hero {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      background: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 50%, var(--accent-3) 100%);
       color: white;
       padding: 80px 20px;
       text-align: center;
@@ -48,11 +65,17 @@
     .hero::before {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 50%);
+      animation: pulse 15s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.1); opacity: 0.3; }
     }
 
     .hero-content {
@@ -62,85 +85,120 @@
       margin: 0 auto;
     }
 
+    .hero-logo {
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 2.5rem;
+      box-shadow: var(--shadow-glow);
+    }
+
     .hero h1 {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: var(--font-display);
       font-size: 3.5rem;
-      font-weight: 700;
+      font-weight: 800;
       margin-bottom: 16px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      letter-spacing: -0.02em;
     }
 
     .hero .subtitle {
       font-size: 1.25rem;
-      opacity: 0.9;
+      opacity: 0.95;
       margin-bottom: 32px;
+      font-weight: 500;
     }
 
     .hero .version {
       display: inline-block;
       background: rgba(255,255,255,0.2);
-      padding: 8px 20px;
+      backdrop-filter: blur(10px);
+      padding: 10px 24px;
       border-radius: 100px;
       font-size: 0.875rem;
-      font-weight: 500;
+      font-weight: 600;
     }
 
+    /* Container */
     .container {
       max-width: 1200px;
       margin: 0 auto;
       padding: 60px 20px;
     }
 
+    /* Section Title */
     .section-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 2rem;
+      font-family: var(--font-display);
+      font-size: 1.75rem;
       font-weight: 700;
-      margin-bottom: 40px;
+      margin-bottom: 32px;
       display: flex;
       align-items: center;
       gap: 16px;
+      color: var(--foreground);
     }
 
     .section-title::before {
       content: '';
       width: 4px;
-      height: 32px;
-      background: linear-gradient(180deg, var(--primary), var(--secondary));
+      height: 28px;
+      background: linear-gradient(180deg, var(--accent-1), var(--accent-3));
       border-radius: 2px;
     }
 
+    /* Cards */
     .card {
-      background: var(--bg-card);
-      border-radius: var(--radius);
+      background: var(--card);
+      border-radius: var(--radius-card);
       padding: 32px;
       margin-bottom: 24px;
-      box-shadow: var(--shadow);
+      box-shadow: var(--shadow-card);
       border: 1px solid var(--border);
+      transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-hover);
     }
 
     .card h3 {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.25rem;
       font-weight: 600;
       margin-bottom: 16px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
 
     .card h3 .icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-chip);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.25rem;
+      flex-shrink: 0;
     }
 
     .card p {
-      color: var(--text-muted);
+      color: var(--muted-foreground);
       margin-bottom: 16px;
+    }
+
+    .card h4 {
+      font-family: var(--font-display);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: var(--foreground);
     }
 
     .card ul {
@@ -149,72 +207,97 @@
     }
 
     .card li {
-      padding: 8px 0;
+      padding: 10px 0;
       padding-left: 28px;
       position: relative;
-      color: var(--text-muted);
+      color: var(--muted-foreground);
     }
 
     .card li::before {
-      content: '✓';
+      content: '';
       position: absolute;
       left: 0;
-      color: var(--success);
-      font-weight: 600;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
     }
 
+    /* Modules Grid */
     .modules-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 24px;
     }
 
     .module-card {
-      background: var(--bg-card);
-      border-radius: var(--radius);
+      background: var(--card);
+      border-radius: var(--radius-card);
       overflow: hidden;
-      box-shadow: var(--shadow);
+      box-shadow: var(--shadow-card);
       border: 1px solid var(--border);
-      transition: transform 0.3s, box-shadow 0.3s;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
     .module-card:hover {
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-lg);
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-hover);
     }
 
     .module-header {
-      padding: 24px;
+      padding: 28px;
       color: white;
+      position: relative;
+      overflow: hidden;
     }
 
-    .module-header.sales { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-    .module-header.production { background: linear-gradient(135deg, #06b6d4, #0891b2); }
-    .module-header.projects { background: linear-gradient(135deg, #f59e0b, #d97706); }
-    .module-header.time { background: linear-gradient(135deg, #10b981, #059669); }
+    .module-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 120px;
+      height: 120px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+      transform: translate(30%, -30%);
+    }
+
+    .module-header.sales { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); }
+    .module-header.production { background: linear-gradient(135deg, var(--accent-2), var(--accent-3)); }
+    .module-header.projects { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    .module-header.time { background: linear-gradient(135deg, var(--accent-1), #059669); }
     .module-header.data { background: linear-gradient(135deg, #ec4899, #db2777); }
 
     .module-header h3 {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.5rem;
+      font-family: var(--font-display);
+      font-size: 1.375rem;
+      font-weight: 700;
       margin-bottom: 8px;
+      position: relative;
     }
 
     .module-header p {
       opacity: 0.9;
       font-size: 0.875rem;
+      font-weight: 500;
+      position: relative;
     }
 
     .module-content {
-      padding: 24px;
+      padding: 24px 28px;
     }
 
     .module-content h4 {
-      font-size: 0.75rem;
+      font-family: var(--font-display);
+      font-size: 0.6875rem;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 12px;
+      letter-spacing: 0.08em;
+      color: var(--muted-foreground);
+      margin-bottom: 14px;
+      font-weight: 600;
     }
 
     .feature-list {
@@ -225,10 +308,11 @@
     .feature-list li {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 0;
+      gap: 12px;
+      padding: 11px 0;
       border-bottom: 1px solid var(--border);
       font-size: 0.9375rem;
+      color: var(--foreground);
     }
 
     .feature-list li:last-child {
@@ -242,20 +326,20 @@
       flex-shrink: 0;
     }
 
-    .feature-list .dot.primary { background: var(--primary); }
-    .feature-list .dot.secondary { background: var(--secondary); }
-    .feature-list .dot.accent { background: var(--accent); }
-    .feature-list .dot.success { background: var(--success); }
-    .feature-list .dot.danger { background: var(--danger); }
+    .feature-list .dot.aqua { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); }
+    .feature-list .dot.blue { background: linear-gradient(135deg, var(--accent-2), var(--accent-3)); }
+    .feature-list .dot.purple { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    .feature-list .dot.green { background: linear-gradient(135deg, var(--accent-1), #059669); }
 
+    /* Steps */
     .steps {
       counter-reset: step;
     }
 
     .step {
       display: flex;
-      gap: 24px;
-      margin-bottom: 32px;
+      gap: 20px;
+      margin-bottom: 28px;
       align-items: flex-start;
     }
 
@@ -264,15 +348,16 @@
       width: 48px;
       height: 48px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-3));
       color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: var(--font-display);
       font-weight: 700;
       font-size: 1.25rem;
       flex-shrink: 0;
+      box-shadow: var(--shadow-glow);
     }
 
     .step-number::before {
@@ -280,71 +365,66 @@
     }
 
     .step-content h4 {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.125rem;
-      margin-bottom: 8px;
+      font-family: var(--font-display);
+      font-size: 1.0625rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      margin-top: 0;
     }
 
     .step-content p {
-      color: var(--text-muted);
+      color: var(--muted-foreground);
+      margin: 0;
     }
 
+    /* Tip Box */
     .tip-box {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1));
-      border-left: 4px solid var(--primary);
+      background: linear-gradient(135deg, rgba(0, 224, 151, 0.08), rgba(0, 222, 224, 0.08), rgba(0, 80, 224, 0.08));
+      border-left: 4px solid;
+      border-image: linear-gradient(180deg, var(--accent-1), var(--accent-3)) 1;
       padding: 20px 24px;
-      border-radius: 0 var(--radius) var(--radius) 0;
+      border-radius: 0 var(--radius-chip) var(--radius-chip) 0;
       margin: 24px 0;
     }
 
     .tip-box h4 {
-      font-family: 'Space Grotesk', sans-serif;
-      color: var(--primary);
+      font-family: var(--font-display);
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin-bottom: 8px;
+      margin-top: 0;
       display: flex;
       align-items: center;
       gap: 8px;
+      font-weight: 600;
     }
 
     .tip-box p {
-      color: var(--text-muted);
+      color: var(--muted-foreground);
       margin: 0;
     }
 
-    .keyboard-shortcut {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      margin: 8px 0;
-    }
-
-    .key {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-family: 'SF Mono', Monaco, monospace;
-      font-size: 0.8125rem;
-      box-shadow: 0 2px 0 var(--border);
-    }
-
+    /* Table of Contents */
     .toc {
-      background: var(--bg-card);
-      border-radius: var(--radius);
-      padding: 32px;
-      box-shadow: var(--shadow);
+      background: var(--card);
+      border-radius: var(--radius-card);
+      padding: 28px;
+      box-shadow: var(--shadow-card);
       border: 1px solid var(--border);
       position: sticky;
       top: 20px;
     }
 
     .toc h3 {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 1rem;
-      margin-bottom: 16px;
-      color: var(--text-muted);
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      margin-bottom: 18px;
+      color: var(--muted-foreground);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.08em;
+      font-weight: 600;
     }
 
     .toc ul {
@@ -353,31 +433,106 @@
     }
 
     .toc li {
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     .toc a {
-      color: var(--text);
+      color: var(--foreground);
       text-decoration: none;
       font-size: 0.9375rem;
       display: block;
-      padding: 8px 12px;
-      border-radius: 8px;
-      transition: background 0.2s, color 0.2s;
+      padding: 10px 14px;
+      border-radius: var(--radius-chip);
+      transition: all 0.2s ease;
+      font-weight: 500;
     }
 
     .toc a:hover {
-      background: var(--bg);
-      color: var(--primary);
+      background: var(--card-muted);
+      color: var(--accent-3);
     }
 
+    /* Two Column Layout */
     .two-column {
       display: grid;
-      grid-template-columns: 280px 1fr;
+      grid-template-columns: 260px 1fr;
       gap: 40px;
       align-items: start;
     }
 
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-left: 10px;
+    }
+
+    .badge.new {
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      color: white;
+    }
+    .badge.pro {
+      background: linear-gradient(135deg, var(--accent-2), var(--accent-3));
+      color: white;
+    }
+
+    /* Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    .data-table thead tr {
+      border-bottom: 2px solid var(--border);
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 14px 0;
+      color: var(--muted-foreground);
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 0.8125rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .data-table td {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--foreground);
+    }
+
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Footer */
+    footer {
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2), var(--accent-3));
+      color: white;
+      padding: 48px 20px;
+      text-align: center;
+      margin-top: 60px;
+    }
+
+    footer p {
+      font-weight: 500;
+    }
+
+    footer .copyright {
+      margin-top: 12px;
+      opacity: 0.85;
+      font-size: 0.875rem;
+    }
+
+    /* Responsive */
     @media (max-width: 900px) {
       .two-column {
         grid-template-columns: 1fr;
@@ -393,40 +548,47 @@
       }
     }
 
-    footer {
-      background: var(--text);
+    /* Ordered List */
+    ol.steps-list {
+      padding-left: 0;
+      counter-reset: item;
+      list-style: none;
+    }
+
+    ol.steps-list li {
+      margin-bottom: 12px;
+      padding-left: 36px;
+      position: relative;
+      color: var(--muted-foreground);
+    }
+
+    ol.steps-list li::before {
+      counter-increment: item;
+      content: counter(item);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
       color: white;
-      padding: 40px 20px;
-      text-align: center;
-      margin-top: 60px;
-    }
-
-    footer p {
-      opacity: 0.7;
-      font-size: 0.875rem;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 100px;
+      border-radius: 50%;
       font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
     }
-
-    .badge.new { background: var(--success); color: white; }
-    .badge.beta { background: var(--accent); color: white; }
-    .badge.pro { background: var(--primary); color: white; }
   </style>
 </head>
 <body>
   <header class="hero">
     <div class="hero-content">
+      <div class="hero-logo">&#9650;</div>
       <h1>PVCS Prism</h1>
       <p class="subtitle">Business Intelligence Dashboard<br>für Sales, Produktion und Projektmanagement</p>
-      <span class="version">Version 2.0 - Januar 2025</span>
+      <span class="version">Version 2.0 - Beta - Januar 2025</span>
     </div>
   </header>
 
@@ -445,6 +607,7 @@
             <li><a href="#zeiterfassung">Zeiterfassung</a></li>
             <li><a href="#einzelcontrolling">Einzelcontrolling</a></li>
             <li><a href="#ki-bericht">KI-Projektbericht</a></li>
+            <li><a href="#visualisierung">Visualisierung</a></li>
             <li><a href="#datenimport">Datenimport</a></li>
             <li><a href="#tipps">Tipps & Tricks</a></li>
           </ul>
@@ -454,13 +617,29 @@
       <main>
         <section id="einfuehrung">
           <h2 class="section-title">Einführung</h2>
+
+          <!-- Beta Disclaimer -->
+          <div class="card" style="background: linear-gradient(135deg, rgba(255, 179, 0, 0.1), rgba(255, 82, 82, 0.05)); border-left: 4px solid var(--warning);">
+            <h3 style="color: #E6A200; gap: 10px;"><span style="font-size: 1.5rem;">&#9888;</span> Beta-Version / Demonstrator</h3>
+            <p>
+              <strong>PVCS Prism befindet sich derzeit in der Beta-Phase.</strong> Diese Version dient als funktionaler Demonstrator
+              zur Veranschaulichung der geplanten Features und Workflows.
+            </p>
+            <p style="margin-bottom: 0;">
+              <strong>Wichtiger Hinweis zu den Daten:</strong> Die aktuell angezeigten Daten können Lücken enthalten und sind
+              möglicherweise nicht auf dem neuesten Stand. In dieser Phase liegt der Fokus auf der <strong>Demonstration der
+              Anwendungsfunktionen</strong> - nicht auf Datengenauigkeit oder Vollständigkeit. Die finale Version wird mit
+              aktuellen, validierten Datenquellen verbunden.
+            </p>
+          </div>
+
           <div class="card">
             <p>
               <strong>PVCS Prism</strong> ist ein modernes Business Intelligence Dashboard, das speziell für die Anforderungen
               von Maschinenbau- und Fertigungsunternehmen entwickelt wurde. Die Anwendung vereint Sales-Tracking,
               Produktionsplanung und Projektcontrolling in einer einheitlichen, benutzerfreundlichen Oberfläche.
             </p>
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Hauptfunktionen</h4>
+            <h4>Hauptfunktionen</h4>
             <ul>
               <li>Echtzeit-Übersicht über Lieferungen und Verkaufszahlen</li>
               <li>Produktionsplanung mit Gantt-Diagrammen</li>
@@ -500,7 +679,7 @@
             </div>
 
             <div class="tip-box">
-              <h4>💡 Tipp</h4>
+              <h4>Tipp</h4>
               <p>Die Sidebar lässt sich mit dem Hamburger-Menü einklappen, um mehr Platz für die Inhalte zu schaffen.</p>
             </div>
           </div>
@@ -511,64 +690,64 @@
           <div class="modules-grid">
             <div class="module-card">
               <div class="module-header sales">
-                <h3>📦 Sales</h3>
+                <h3>Sales</h3>
                 <p>Lieferungen & Umsätze</p>
               </div>
               <div class="module-content">
                 <h4>Funktionen</h4>
                 <ul class="feature-list">
-                  <li><span class="dot primary"></span>Dashboard mit KPIs</li>
-                  <li><span class="dot primary"></span>Lieferungsliste mit Filterung</li>
-                  <li><span class="dot primary"></span>Kritische & beobachtete Projekte</li>
-                  <li><span class="dot primary"></span>Detailansicht pro Lieferung</li>
+                  <li><span class="dot aqua"></span>Dashboard mit KPIs</li>
+                  <li><span class="dot aqua"></span>Lieferungsliste mit Filterung</li>
+                  <li><span class="dot aqua"></span>Kritische & beobachtete Projekte</li>
+                  <li><span class="dot aqua"></span>Detailansicht pro Lieferung</li>
                 </ul>
               </div>
             </div>
 
             <div class="module-card">
               <div class="module-header production">
-                <h3>🏭 Produktion</h3>
+                <h3>Produktion</h3>
                 <p>Planung & Fertigung</p>
               </div>
               <div class="module-content">
                 <h4>Funktionen</h4>
                 <ul class="feature-list">
-                  <li><span class="dot secondary"></span>Produktions-Dashboard</li>
-                  <li><span class="dot secondary"></span>Gantt-Diagramm</li>
-                  <li><span class="dot secondary"></span>Planungsübersicht</li>
-                  <li><span class="dot secondary"></span>Soll-Ist-Vergleich</li>
+                  <li><span class="dot blue"></span>Produktions-Dashboard</li>
+                  <li><span class="dot blue"></span>Gantt-Diagramm</li>
+                  <li><span class="dot blue"></span>Planungsübersicht</li>
+                  <li><span class="dot blue"></span>Soll-Ist-Vergleich</li>
                 </ul>
               </div>
             </div>
 
             <div class="module-card">
               <div class="module-header projects">
-                <h3>📁 Projektmanagement</h3>
+                <h3>Projektmanagement</h3>
                 <p>Controlling & Planner</p>
               </div>
               <div class="module-content">
                 <h4>Funktionen</h4>
                 <ul class="feature-list">
-                  <li><span class="dot accent"></span>Controlling-Dashboard</li>
-                  <li><span class="dot accent"></span>Projektliste</li>
-                  <li><span class="dot accent"></span>Kanban-Planner</li>
-                  <li><span class="dot accent"></span>Einzelcontrolling</li>
+                  <li><span class="dot purple"></span>Controlling-Dashboard</li>
+                  <li><span class="dot purple"></span>Projektliste</li>
+                  <li><span class="dot purple"></span>Kanban-Planner</li>
+                  <li><span class="dot purple"></span>Einzelcontrolling</li>
                 </ul>
               </div>
             </div>
 
             <div class="module-card">
               <div class="module-header time">
-                <h3>⏱️ Zeiterfassung</h3>
+                <h3>Zeiterfassung</h3>
                 <p>Timer & Auswertung</p>
               </div>
               <div class="module-content">
                 <h4>Funktionen</h4>
                 <ul class="feature-list">
-                  <li><span class="dot success"></span>Timer starten/stoppen</li>
-                  <li><span class="dot success"></span>Manuelle Einträge</li>
-                  <li><span class="dot success"></span>Wochen-Übersicht</li>
-                  <li><span class="dot success"></span>PDF-Export</li>
+                  <li><span class="dot green"></span>Timer starten/stoppen</li>
+                  <li><span class="dot green"></span>Manuelle Einträge</li>
+                  <li><span class="dot green"></span>Wochen-Übersicht</li>
+                  <li><span class="dot green"></span>PDF-Export</li>
                 </ul>
               </div>
             </div>
@@ -578,13 +757,13 @@
         <section id="sales">
           <h2 class="section-title">Sales-Modul</h2>
           <div class="card">
-            <h3><span class="icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">📦</span> Lieferungen verwalten</h3>
+            <h3><span class="icon" style="background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); color: white;">&#128230;</span> Lieferungen verwalten</h3>
             <p>
               Das Sales-Modul bietet eine umfassende Übersicht über alle Lieferungen. Auf dem Dashboard sehen Sie die wichtigsten
               KPIs auf einen Blick: Offener Umsatz, Anzahl Projekte und kritische Lieferungen.
             </p>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Projekt-Status</h4>
+            <h4>Projekt-Status</h4>
             <ul>
               <li><strong>Beobachtet:</strong> Projekte, die besondere Aufmerksamkeit erfordern</li>
               <li><strong>Kritisch:</strong> Projekte mit erhöhtem Risiko</li>
@@ -592,8 +771,8 @@
             </ul>
 
             <div class="tip-box">
-              <h4>💡 Status ändern</h4>
-              <p>Klicken Sie auf das Auge-Symbol (👁) um ein Projekt zu beobachten, oder auf das Warnsymbol (⚠️) um es als kritisch zu markieren.</p>
+              <h4>Status ändern</h4>
+              <p>Klicken Sie auf das Auge-Symbol um ein Projekt zu beobachten, oder auf das Warnsymbol um es als kritisch zu markieren.</p>
             </div>
           </div>
         </section>
@@ -601,18 +780,18 @@
         <section id="produktion">
           <h2 class="section-title">Produktion</h2>
           <div class="card">
-            <h3><span class="icon" style="background: linear-gradient(135deg, #06b6d4, #0891b2); color: white;">🏭</span> Produktionsplanung</h3>
+            <h3><span class="icon" style="background: linear-gradient(135deg, var(--accent-2), var(--accent-3)); color: white;">&#127981;</span> Produktionsplanung</h3>
             <p>
               Behalten Sie Ihre Fertigung im Blick mit interaktiven Gantt-Diagrammen und der Soll-Ist-Analyse.
             </p>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Gantt-Ansicht</h4>
+            <h4>Gantt-Ansicht</h4>
             <p>
               Die Gantt-Ansicht zeigt alle Produktionsaufträge (PAs) auf einer Zeitachse. Verspätete PAs werden rot markiert.
               Nutzen Sie die Zoom-Funktion um zwischen Tages-, Wochen- und Monatsansicht zu wechseln.
             </p>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Soll-Ist-Vergleich</h4>
+            <h4>Soll-Ist-Vergleich</h4>
             <p>
               Vergleichen Sie geplante und tatsächliche Produktionsstunden. Abweichungen werden farblich hervorgehoben.
             </p>
@@ -622,18 +801,18 @@
         <section id="projektmanagement">
           <h2 class="section-title">Projektmanagement</h2>
           <div class="card">
-            <h3><span class="icon" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">📁</span> Projekte steuern</h3>
+            <h3><span class="icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">&#128193;</span> Projekte steuern</h3>
             <p>
               Das Projektmanagement-Modul vereint Controlling-Dashboard, Projektliste und Kanban-Planner.
             </p>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Controlling-Dashboard</h4>
+            <h4>Controlling-Dashboard</h4>
             <p>
               Sehen Sie alle Projekte mit Deckungsbeitrag, Fortschritt und Kostenabweichung.
               Projekte mit negativem DB oder hoher Kostenüberschreitung werden hervorgehoben.
             </p>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Kanban-Planner</h4>
+            <h4>Kanban-Planner</h4>
             <p>
               Organisieren Sie Aufgaben visuell mit Drag-and-Drop. Erstellen Sie eigene Boards für verschiedene Projekte oder Teams.
             </p>
@@ -643,20 +822,20 @@
         <section id="zeiterfassung">
           <h2 class="section-title">Zeiterfassung</h2>
           <div class="card">
-            <h3><span class="icon" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">⏱️</span> Zeit erfassen <span class="badge new">Neu</span></h3>
+            <h3><span class="icon" style="background: linear-gradient(135deg, var(--accent-1), #059669); color: white;">&#9201;</span> Zeit erfassen <span class="badge new">Neu</span></h3>
             <p>
               Erfassen Sie Ihre Arbeitszeit projektbezogen - direkt aus dem Header oder auf der Zeiterfassungs-Seite.
             </p>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Timer starten</h4>
-            <ol style="padding-left: 20px; color: var(--text-muted);">
-              <li style="margin-bottom: 8px;">Klicken Sie auf "Zeit erfassen" im Header</li>
-              <li style="margin-bottom: 8px;">Wählen Sie ein Projekt aus oder geben Sie eine Projektnummer ein</li>
-              <li style="margin-bottom: 8px;">Der Timer startet automatisch</li>
-              <li style="margin-bottom: 8px;">Stoppen Sie den Timer und fügen Sie optional eine Beschreibung hinzu</li>
+            <h4>Timer starten</h4>
+            <ol class="steps-list">
+              <li>Klicken Sie auf "Zeit erfassen" im Header</li>
+              <li>Wählen Sie ein Projekt aus oder geben Sie eine Projektnummer ein</li>
+              <li>Der Timer startet automatisch</li>
+              <li>Stoppen Sie den Timer und fügen Sie optional eine Beschreibung hinzu</li>
             </ol>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Kategorien</h4>
+            <h4>Kategorien</h4>
             <ul>
               <li><strong>Entwicklung:</strong> Konstruktion, Programmierung</li>
               <li><strong>Besprechung:</strong> Meetings, Abstimmungen</li>
@@ -667,7 +846,7 @@
             </ul>
 
             <div class="tip-box">
-              <h4>📄 PDF-Export</h4>
+              <h4>PDF-Export</h4>
               <p>Exportieren Sie Ihre Zeiteinträge als PDF für Abrechnungen oder Dokumentation.</p>
             </div>
           </div>
@@ -676,20 +855,20 @@
         <section id="einzelcontrolling">
           <h2 class="section-title">Einzelcontrolling</h2>
           <div class="card">
-            <h3><span class="icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white;">📊</span> Projektdetails analysieren</h3>
+            <h3><span class="icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white;">&#128202;</span> Projektdetails analysieren</h3>
             <p>
               Laden Sie eine Einzelcontrolling-Excel hoch und erhalten Sie eine detaillierte Analyse mit allen Kostenstellen,
               Arbeitsgängen und dem KI-gestützten Projektbericht.
             </p>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Excel-Aufbau</h4>
+            <h4>Excel-Aufbau</h4>
             <p>Die Einzelcontrolling-Excel sollte folgende Sheets enthalten:</p>
             <ul>
               <li><strong>Info:</strong> Übersicht mit Projektnummer, Kunde, Auftragsvolumen</li>
               <li><strong>Tabellen:</strong> Detaillierte Kostenaufstellung nach Bereichen</li>
             </ul>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Auswertungen</h4>
+            <h4>Auswertungen</h4>
             <ul>
               <li>Übersicht: Auftragsvolumen, Gesamtkosten, Deckungsbeitrag</li>
               <li>KPIs: Plan vs. Ist, Kostenabweichung, Fortschritt</li>
@@ -702,13 +881,13 @@
         <section id="ki-bericht">
           <h2 class="section-title">KI-Projektbericht</h2>
           <div class="card">
-            <h3><span class="icon" style="background: linear-gradient(135deg, #ec4899, #db2777); color: white;">🤖</span> KI-Analyse <span class="badge pro">Pro</span></h3>
+            <h3><span class="icon" style="background: linear-gradient(135deg, #ec4899, #db2777); color: white;">&#129302;</span> KI-Analyse <span class="badge pro">Pro</span></h3>
             <p>
               Der KI-Projektbericht nutzt Google Gemini 3 Flash um automatisch eine professionelle Analyse
               Ihrer Projektdaten zu erstellen.
             </p>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Berichtsinhalte</h4>
+            <h4>Berichtsinhalte</h4>
             <ul>
               <li><strong>Zusammenfassung:</strong> Kompakte Übersicht des Projektstatus</li>
               <li><strong>Stärken:</strong> Positive Aspekte des Projekts</li>
@@ -718,8 +897,46 @@
             </ul>
 
             <div class="tip-box">
-              <h4>🔒 Datenschutz</h4>
+              <h4>Datenschutz</h4>
               <p>Die KI-Analyse erfolgt serverseitig über eine sichere Netlify Function. Ihre Daten werden nicht gespeichert.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="visualisierung">
+          <h2 class="section-title">Visualisierung</h2>
+          <div class="card">
+            <h3><span class="icon" style="background: linear-gradient(135deg, var(--accent-2), var(--accent-3)); color: white;">&#128065;</span> Interaktive Datenvisualisierung <span class="badge new">Neu</span></h3>
+            <p>
+              Das Visualisierungs-Modul bietet innovative, interaktive Darstellungen Ihrer Projektdaten.
+              Erkunden Sie komplexe Zusammenhänge auf intuitive Weise.
+            </p>
+
+            <h4>Force Tree View</h4>
+            <p>
+              Eine dynamische Baumstruktur-Visualisierung, die Projektabhängigkeiten und Hierarchien
+              als interaktives Netzwerk darstellt. Knoten lassen sich verschieben und zoomen.
+            </p>
+            <ul>
+              <li><strong>Hierarchische Darstellung:</strong> Projekte, Teilprojekte und Arbeitspakete als verbundene Knoten</li>
+              <li><strong>Interaktive Navigation:</strong> Drag & Drop, Zoom und Pan für optimale Übersicht</li>
+              <li><strong>Farbcodierung:</strong> Status und Prioritäten auf einen Blick erkennbar</li>
+            </ul>
+
+            <h4>Force Timeline View</h4>
+            <p>
+              Kombiniert zeitliche Abläufe mit Beziehungs-Visualisierung. Sehen Sie, wie Projekte
+              und Meilensteine zeitlich zusammenhängen.
+            </p>
+            <ul>
+              <li><strong>Zeitachse:</strong> Projekte entlang einer interaktiven Timeline</li>
+              <li><strong>Abhängigkeiten:</strong> Verbindungslinien zeigen Beziehungen zwischen Elementen</li>
+              <li><strong>Filteroptionen:</strong> Fokussieren Sie auf bestimmte Zeiträume oder Projekttypen</li>
+            </ul>
+
+            <div class="tip-box">
+              <h4>Experimentelle Features</h4>
+              <p>Die Visualisierungen befinden sich in aktiver Entwicklung. Neue Darstellungsformen und Interaktionsmöglichkeiten werden kontinuierlich ergänzt.</p>
             </div>
           </div>
         </section>
@@ -727,46 +944,46 @@
         <section id="datenimport">
           <h2 class="section-title">Datenimport</h2>
           <div class="card">
-            <h3><span class="icon" style="background: linear-gradient(135deg, #64748b, #475569); color: white;">📥</span> Excel-Dateien importieren</h3>
+            <h3><span class="icon" style="background: linear-gradient(135deg, #64748b, #475569); color: white;">&#128229;</span> Excel-Dateien importieren</h3>
             <p>
               PVCS Prism unterstützt den Import von Excel-Dateien (.xlsx) für verschiedene Bereiche.
             </p>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Unterstützte Dateitypen</h4>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+            <h4>Unterstützte Dateitypen</h4>
+            <table class="data-table">
               <thead>
-                <tr style="border-bottom: 2px solid var(--border);">
-                  <th style="text-align: left; padding: 12px 0; color: var(--text-muted); font-weight: 600;">Datei</th>
-                  <th style="text-align: left; padding: 12px 0; color: var(--text-muted); font-weight: 600;">Modul</th>
-                  <th style="text-align: left; padding: 12px 0; color: var(--text-muted); font-weight: 600;">Erkennung</th>
+                <tr>
+                  <th>Datei</th>
+                  <th>Modul</th>
+                  <th>Erkennung</th>
                 </tr>
               </thead>
               <tbody>
-                <tr style="border-bottom: 1px solid var(--border);">
-                  <td style="padding: 12px 0;">Lieferungen.xlsx</td>
-                  <td style="padding: 12px 0;">Sales</td>
-                  <td style="padding: 12px 0;">Automatisch</td>
-                </tr>
-                <tr style="border-bottom: 1px solid var(--border);">
-                  <td style="padding: 12px 0;">Planung.xlsx</td>
-                  <td style="padding: 12px 0;">Produktion</td>
-                  <td style="padding: 12px 0;">Automatisch</td>
-                </tr>
-                <tr style="border-bottom: 1px solid var(--border);">
-                  <td style="padding: 12px 0;">Controlling.xlsx</td>
-                  <td style="padding: 12px 0;">Projektmanagement</td>
-                  <td style="padding: 12px 0;">Automatisch</td>
+                <tr>
+                  <td>Lieferungen.xlsx</td>
+                  <td>Sales</td>
+                  <td>Automatisch</td>
                 </tr>
                 <tr>
-                  <td style="padding: 12px 0;">Einzelcontrolling.xlsx</td>
-                  <td style="padding: 12px 0;">Einzelcontrolling</td>
-                  <td style="padding: 12px 0;">Manuell</td>
+                  <td>Planung.xlsx</td>
+                  <td>Produktion</td>
+                  <td>Automatisch</td>
+                </tr>
+                <tr>
+                  <td>Controlling.xlsx</td>
+                  <td>Projektmanagement</td>
+                  <td>Automatisch</td>
+                </tr>
+                <tr>
+                  <td>Einzelcontrolling.xlsx</td>
+                  <td>Einzelcontrolling</td>
+                  <td>Manuell</td>
                 </tr>
               </tbody>
             </table>
 
             <div class="tip-box">
-              <h4>⚡ Schnellimport</h4>
+              <h4>Schnellimport</h4>
               <p>Ziehen Sie Excel-Dateien per Drag & Drop auf den Import-Bereich. Die Datei wird automatisch erkannt.</p>
             </div>
           </div>
@@ -775,25 +992,25 @@
         <section id="tipps">
           <h2 class="section-title">Tipps & Tricks</h2>
           <div class="card">
-            <h3>🎯 Produktiver arbeiten</h3>
+            <h3>Produktiver arbeiten</h3>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Dark Mode</h4>
+            <h4>Dark Mode</h4>
             <p>
               Wechseln Sie zwischen Hell- und Dunkelmodus mit dem Sonnen/Mond-Symbol im Header.
               Die Einstellung wird gespeichert.
             </p>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Sidebar einklappen</h4>
+            <h4>Sidebar einklappen</h4>
             <p>
               Klicken Sie auf das Menü-Symbol links oben um die Sidebar einzuklappen und mehr Platz zu gewinnen.
             </p>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Schnelle Zeiterfassung</h4>
+            <h4>Schnelle Zeiterfassung</h4>
             <p>
               Nutzen Sie den Timer-Button im Header für schnellen Zugriff auf die Zeiterfassung von jeder Seite aus.
             </p>
 
-            <h4 style="margin-top: 24px; margin-bottom: 12px; font-weight: 600;">Daten in Firebase</h4>
+            <h4>Daten in Firebase</h4>
             <p>
               Kritische/beobachtete Projekte und Zeiteinträge werden in Firebase gespeichert und sind geräteübergreifend verfügbar.
             </p>
@@ -805,7 +1022,7 @@
 
   <footer>
     <p><strong>PVCS Prism</strong> - Business Intelligence Dashboard</p>
-    <p style="margin-top: 8px;">© 2025 PVCS. Alle Rechte vorbehalten.</p>
+    <p class="copyright">&copy; 2025 PVCS. Alle Rechte vorbehalten.</p>
   </footer>
 </body>
 </html>
