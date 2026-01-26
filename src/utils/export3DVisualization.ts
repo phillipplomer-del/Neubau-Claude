@@ -576,9 +576,13 @@ export function export3DVisualization(
         document.body.style.cursor = 'pointer';
         tooltipType.textContent = typeLabels[node.type] || node.type;
         tooltipName.textContent = node.name;
+        // Calculate progress from actual/planned if completionPercentage is 0 or missing
+        const progress = node.completionPercentage > 0
+          ? node.completionPercentage
+          : (node.plannedHours > 0 ? Math.min(100, (node.actualHours / node.plannedHours) * 100) : 0);
         tooltipDetails.innerHTML = \`
           <div>Nr: \${node.identifier}</div>
-          <div>Fortschritt: \${node.completionPercentage.toFixed(0)}%</div>
+          <div>Fortschritt: \${progress.toFixed(0)}%</div>
           <div>Soll: \${node.plannedHours.toFixed(1)}h | Ist: \${node.actualHours.toFixed(1)}h</div>
         \`;
         tooltipOverdue.textContent = node.isOverdue ? '⚠ ÜBERFÄLLIG' : '';
