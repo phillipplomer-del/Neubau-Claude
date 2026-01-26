@@ -12,7 +12,8 @@ import { useSalesData } from '@/hooks/useSalesData';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';
-import { RefreshCw, AlertCircle, Maximize2, Minimize2, Box, Circle, Expand, Shrink } from 'lucide-react';
+import { RefreshCw, AlertCircle, Maximize2, Minimize2, Box, Circle, Expand, Shrink, Download } from 'lucide-react';
+import { export3DVisualization } from '@/utils/export3DVisualization';
 
 // Node type for 3D graph
 interface GraphNode {
@@ -26,6 +27,7 @@ interface GraphNode {
   completionPercentage: number;
   identifier: string;
   deliveryDate?: Date;
+  endDate?: Date;
   isCompleted: boolean;
   isOverdue: boolean;
   depth: number;
@@ -444,6 +446,7 @@ export default function ForceTimelineView3D({ onSwitchTo2D }: ForceTimelineView3
           completionPercentage: node.completionPercentage,
           identifier: node.identifier,
           deliveryDate: item.deliveryDate,
+          endDate: node.endDate,
           isCompleted: node.isCompleted,
           isOverdue,
           depth,
@@ -746,6 +749,50 @@ export default function ForceTimelineView3D({ onSwitchTo2D }: ForceTimelineView3
     };
   }, []);
 
+  // Export to HTML handler
+  const handleExportHTML = useCallback(() => {
+    if (graphData.nodes.length === 0) return;
+
+    // Get time period for title
+    const periodLabel = timeUnit === 'week'
+      ? weekOptions.find(o => o.value === selectedWeek)?.label || selectedWeek
+      : monthOptions.find(o => o.value === selectedMonth)?.label || selectedMonth;
+
+    // Get overdue items (only articles and PAs, not operations)
+    const overdueItems = graphData.nodes
+      .filter(n => n.isOverdue && n.type !== 'timeline' && n.type !== 'operation')
+      .map(n => ({
+        identifier: n.identifier,
+        name: n.name,
+        type: n.type === 'article' ? 'Art' :
+              n.type === 'unterartikel' ? 'UA' :
+              n.type === 'pa' ? 'PA' : n.type,
+        endDate: n.endDate ? n.endDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : undefined,
+      }));
+
+    export3DVisualization(
+      {
+        nodes: graphData.nodes.map(n => ({
+          ...n,
+          deliveryDate: n.deliveryDate?.toISOString(),
+        })),
+        links: graphData.links,
+      },
+      {
+        title: 'Force Timeline 3D',
+        subtitle: `${filteredArticles.length} Artikel - ${periodLabel}`,
+        articleInfo: undefined,
+        overdueItems,
+        showTimeline: true,
+        backgroundColor: COLORS.background,
+        colors: {
+          article: COLORS.article,
+          link: COLORS.link,
+        },
+      }
+    );
+  }, [graphData, filteredArticles, timeUnit, selectedWeek, selectedMonth, weekOptions, monthOptions, COLORS]);
+
   const typeLabels: Record<string, string> = {
     article: 'Verkaufsartikel',
     unterartikel: 'Unterartikel',
@@ -794,6 +841,10 @@ export default function ForceTimelineView3D({ onSwitchTo2D }: ForceTimelineView3
               2D View
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={handleExportHTML} disabled={graphData.nodes.length === 0}>
+            <Download className="h-4 w-4 mr-2" />
+            HTML Export
+          </Button>
           <Button variant="outline" size="sm" onClick={refresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Aktualisieren

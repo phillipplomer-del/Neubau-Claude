@@ -11,7 +11,8 @@ import { useProductionHierarchy, type HierarchyNode } from '@/hooks/useProductio
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';
-import { RefreshCw, AlertCircle, Maximize2, Minimize2, Search, X, Box, Circle } from 'lucide-react';
+import { RefreshCw, AlertCircle, Maximize2, Minimize2, Search, X, Box, Circle, Download } from 'lucide-react';
+import { export3DVisualization } from '@/utils/export3DVisualization';
 
 // Node type for 3D graph
 interface GraphNode {
@@ -28,6 +29,7 @@ interface GraphNode {
   description?: string;
   isCompleted: boolean;
   isOverdue: boolean;
+  endDate?: Date;
   depth: number;
   // Force graph internal properties
   x?: number;
@@ -232,6 +234,7 @@ function hierarchyToGraphData(
       description: node.description,
       isCompleted: node.isCompleted,
       isOverdue,
+      endDate: node.endDate,
       depth,
     };
 
@@ -563,6 +566,54 @@ export default function ForceTreeView3D({ onSwitchTo2D }: ForceTreeView3DProps) 
     };
   }, []);
 
+  // Export to HTML handler
+  const handleExportHTML = useCallback(() => {
+    if (graphData.nodes.length === 0) return;
+
+    // Find main article info
+    const rootNode = graphData.nodes.find(n => n.depth === 0);
+    const articleInfo = rootNode ? {
+      identifier: rootNode.identifier,
+      name: rootNode.name,
+      description: rootNode.description,
+    } : undefined;
+
+    // Get overdue items (only articles and PAs, not operations)
+    const overdueItems = graphData.nodes
+      .filter(n => n.isOverdue && n.type !== 'operation')
+      .map(n => ({
+        identifier: n.identifier,
+        name: n.name,
+        type: n.type === 'article' ? 'Art' :
+              n.type === 'pa' || n.type === 'mainPA' ? 'PA' : n.type,
+        endDate: n.endDate ? n.endDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : undefined,
+      }));
+
+    export3DVisualization(
+      {
+        nodes: graphData.nodes.map(n => ({
+          ...n,
+          deliveryDate: undefined,
+        })),
+        links: graphData.links,
+      },
+      {
+        title: 'Force-Directed Tree 3D',
+        subtitle: selectedProject
+          ? `Projekt ${projectList.find(p => p.id === selectedProject)?.identifier || ''}`
+          : articleInfo?.name || 'Artikelstruktur',
+        articleInfo,
+        overdueItems,
+        showTimeline: false,
+        backgroundColor: COLORS.background,
+        colors: {
+          article: COLORS.article,
+          link: COLORS.link,
+        },
+      }
+    );
+  }, [graphData, selectedProject, projectList, COLORS]);
+
   const typeLabels: Record<string, string> = {
     project: 'Projekt',
     article: 'Artikel',
@@ -612,6 +663,10 @@ export default function ForceTreeView3D({ onSwitchTo2D }: ForceTreeView3DProps) 
               2D View
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={handleExportHTML} disabled={graphData.nodes.length === 0}>
+            <Download className="h-4 w-4 mr-2" />
+            HTML Export
+          </Button>
           <Button variant="outline" size="sm" onClick={refresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Aktualisieren
